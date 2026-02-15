@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ULM Theorie - FlyTest</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body{
+      font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height:100vh;
+      padding:20px;
+    }
+    .container{ max-width:800px; margin:0 auto; }
+    .header{ text-align:center; color:#fff; margin-bottom:30px; }
+    .header h1{ font-size:2.5em; margin-bottom:10px; text-shadow:2px 2px 4px rgba(0,0,0,0.2); }
+    .owl-emoji{ font-size:3em; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    .card{
+      background:#fff; border-radius:20px; padding:40px;
+      box-shadow:0 10px 40px rgba(0,0,0,0.2); margin-bottom:20px;
+    }
+    .setup-section textarea{
+      width:100%; min-height:200px; padding:15px; border:3px solid #e5e5e5;
+      border-radius:12px; font-size:16px; font-family:inherit; resize:vertical;
+      transition:border-color 0.3s;
+    }
+    .setup-section textarea:focus{ outline:none; border-color:#58cc02; }
+    .file-upload-area{
+      border:3px dashed #e5e5e5; border-radius:16px; padding:40px;
+      text-align:center; transition:all 0.3s; cursor:pointer; margin-bottom:20px;
+    }
+    .file-upload-area:hover{ border-color:#58cc02; background:#f7f7f7; }
+    .file-upload-area.dragover{ border-color:#58cc02; background:#e6f7ff; }
+    .file-input{ display:none; }
+    .upload-icon{ font-size:48px; margin-bottom:15px; }
+    .upload-text{ font-size:18px; color:#3c3c3c; margin-bottom:10px; }
+    .upload-subtext{ font-size:14px; color:#777; }
+    .file-name{
+      margin-top:15px; padding:10px; background:#e6f7ff;
+      border-radius:8px; color:#1cb0f6; font-weight:bold;
+    }
+    .btn{
+      background:#58cc02; color:#fff; border:none; padding:18px 40px;
+      font-size:18px; font-weight:bold; border-radius:16px; cursor:pointer;
+      width:100%; margin-top:20px; transition:all 0.3s;
+      box-shadow:0 4px 0 #46a302; text-transform:uppercase; letter-spacing:1px;
+    }
+    .btn:hover{ background:#46a302; transform:translateY(-2px); box-shadow:0 6px 0 #3a8502; }
+    .btn:active{ transform:translateY(2px); box-shadow:0 2px 0 #46a302; }
+    .btn:disabled{ background:#cccccc; box-shadow:0 4px 0 #999999; cursor:not-allowed; }
+    .btn-secondary{ background:#1cb0f6; box-shadow:0 4px 0 #1899d6; }
+    .btn-secondary:hover{ background:#1899d6; box-shadow:0 6px 0 #1682be; }
+
+    .progress-bar{ width:100%; height:20px; background:#e5e5e5; border-radius:10px; overflow:hidden; margin-bottom:30px; }
+    .progress-fill{ height:100%; background:linear-gradient(90deg,#58cc02,#46a302); width:0%; transition:width 0.5s ease; border-radius:10px; }
+
+    .question-text{ font-size:24px; font-weight:bold; color:#3c3c3c; margin-bottom:30px; line-height:1.4; }
+    .options{ display:flex; flex-direction:column; gap:15px; }
+    .option{
+      padding:20px; border:3px solid #e5e5e5; border-radius:16px;
+      cursor:pointer; transition:all 0.3s; font-size:18px; background:#fff;
+    }
+    .option:hover{ background:#f7f7f7; transform:scale(1.02); }
+    .option.selected{ border-color:#1cb0f6; background:#e6f7ff; }
+    .option.correct{ border-color:#58cc02; background:#d7ffb8; }
+    .option.incorrect{ border-color:#ff4b4b; background:#ffd1d1; }
+
+    .feedback{ margin-top:30px; padding:25px; border-radius:16px; display:none; }
+    .feedback.active{ display:block; }
+    .feedback.correct{ background:#d7ffb8; border:3px solid #58cc02; }
+    .feedback.incorrect{ background:#ffd1d1; border:3px solid #ff4b4b; }
+    .feedback-title{ font-size:22px; font-weight:bold; margin-bottom:15px; }
+    .feedback.correct .feedback-title{ color:#46a302; }
+    .feedback.incorrect .feedback-title{ color:#d32f2f; }
+    .explanation{ font-size:16px; line-height:1.6; color:#3c3c3c; }
+
+    .stats{ display:flex; justify-content:space-around; margin-bottom:20px; }
+    .stat{ text-align:center; }
+    .stat-value{ font-size:32px; font-weight:bold; color:#58cc02; }
+    .stat-label{ font-size:14px; color:#777; margin-top:5px; }
+    .hidden{ display:none; }
+
+    .results-section{ text-align:center; }
+    .results-section h2{ font-size:36px; margin-bottom:20px; color:#3c3c3c; }
+    .score-circle{
+      width:200px; height:200px; border-radius:50%;
+      background:linear-gradient(135deg,#58cc02,#46a302);
+      margin:30px auto; display:flex; align-items:center; justify-content:center;
+      box-shadow:0 10px 30px rgba(88,204,2,0.3);
+    }
+    .score-text{ color:#fff; font-size:48px; font-weight:bold; }
+
+    label{ display:block; font-weight:bold; color:#3c3c3c; margin-bottom:10px; font-size:18px; }
+    .info-text{ color:#777; font-size:14px; margin-bottom:20px; line-height:1.6; }
+    .loading{ text-align:center; padding:20px; color:#1cb0f6; font-size:18px; }
+    .spinner{
+      border:4px solid #f3f3f3; border-top:4px solid #1cb0f6; border-radius:50%;
+      width:40px; height:40px; animation:spin 1s linear infinite; margin:20px auto;
+    }
+    @keyframes spin{ 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+
+    .tab-buttons{ display:flex; gap:10px; margin-bottom:20px; }
+    .tab-btn{
+      flex:1; padding:15px; background:#e5e5e5; border:none; border-radius:12px;
+      cursor:pointer; font-size:16px; font-weight:bold; transition:all 0.3s;
+    }
+    .tab-btn.active{ background:#58cc02; color:#fff; }
+    .tab-content{ display:none; }
+    .tab-content.active{ display:block; }
+
+    .small-note{
+      margin-top:10px; font-size:12px; color:#777; line-height:1.5;
+    }
+    .pill{
+      display:inline-block; padding:6px 10px; border-radius:999px;
+      background:#f1f1f1; margin:0 6px 6px 0; font-size:12px; color:#333;
+    }
+  
+    .acronym-box{
+      margin-top:-18px;
+      margin-bottom:20px;
+      padding:12px 14px;
+      border-radius:14px;
+      background:#f7f7f7;
+      border:2px solid #e5e5e5;
+      color:#3c3c3c;
+      font-size:13px;
+      line-height:1.5;
+    }
+    .acronym-box b{ color:#1cb0f6; }
+
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="owl-emoji">🦉</div>
+      <h1>Kristof's ULM Theorie</h1>
+      <p>Beheers je kennis, één vraag per keer!</p>
+    </div>
+
+    <!-- Setup -->
+    <div id="setupSection" class="card setup-section">
+      <h2 style="margin-bottom: 20px; color:#3c3c3c;">📚 Voeg Je Cursusmateriaal Toe</h2>
+      <p class="info-text">
+        Je kan meteen starten: de examenvragen zitten al <b>ingebouwd</b>.
+        (Optioneel) Upload je cursus als PDF of plak tekst om extra oefenvragen te genereren.
+      </p>
+
+      <div class="tab-buttons">
+        <button class="tab-btn active" id="tabPdfBtn" type="button">📄 PDF Upload</button>
+        <button class="tab-btn" id="tabTextBtn" type="button">📝 Tekst Invoer</button>
+      </div>
+
+      <!-- PDF tab -->
+      <div id="pdfTab" class="tab-content active">
+        <div class="file-upload-area" id="fileUploadArea">
+          <div class="upload-icon">📁</div>
+          <div class="upload-text">Klik om een PDF te selecteren</div>
+          <div class="upload-subtext">Of sleep een bestand hierheen</div>
+          <input type="file" id="fileInput" class="file-input" accept=".pdf">
+          <div id="fileName" class="file-name hidden"></div>
+        </div>
+
+        <div class="small-note">
+          <span class="pill">Tip</span>
+          Als jouw PDF uit <b>scans/foto’s</b> bestaat, kan PDF.js weinig tekst vinden.
+          In dat geval: gebruik de <b>Tekst Invoer</b>-tab (kopieer/plak) of maak een “tekstherkenning/OCR” export.
+        </div>
+      </div>
+
+      <!-- Text tab -->
+      <div id="textTab" class="tab-content">
+        <label for="courseContent">Cursusinhoud:</label>
+        <textarea id="courseContent" placeholder="Plak hier je cursusinhoud..."></textarea>
+      </div>
+
+
+      <!-- Vragenbestand upload (JSON/TXT) (optioneel) -->
+      <div style="margin-top:20px; display:none;">
+        <label style="font-weight:bold; color:#3c3c3c;">📥 Upload vragenbestand (JSON of TXT):</label>
+
+        <div class="file-upload-area" id="questionUploadArea" style="margin-top:10px;">
+          <div class="upload-icon">🧩</div>
+          <div class="upload-text">Klik om vragenbestand te selecteren</div>
+          <div class="upload-subtext">.json of .txt</div>
+          <input type="file" id="questionFileInput" class="file-input" accept=".json,.txt">
+          <div id="questionFileName" class="file-name hidden"></div>
+        </div>
+
+        <div class="small-note">
+          <span class="pill">Werking</span>
+          Als je een vragenbestand uploadt, gebruikt de app <b>jouw vragen</b> en genereert ze niets automatisch.
+        </div>
+      </div>
+
+      <div id="loadingIndicator" class="loading hidden">
+        <div class="spinner"></div>
+        <p>PDF wordt verwerkt...</p>
+      </div>
+
+      <button class="btn" id="startBtn" type="button">Start Met Leren 🚀</button>
+    </div>
+
+    <!-- Quiz -->
+    <div id="quizSection" class="card hidden">
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value" id="statRemaining">0</div>
+          <div class="stat-label">Te oefenen</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statMastered">0</div>
+          <div class="stat-label">Beheerst</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statWrong">0</div>
+          <div class="stat-label">Fout (totaal)</div>
+        </div>
+      </div>
+
+      <div class="question-text" id="questionText"></div>
+      <div id="acronymBox" class="acronym-box hidden"></div>
+      <div class="options" id="optionsContainer"></div>
+
+      <div id="feedback" class="feedback">
+        <div class="feedback-title" id="feedbackTitle"></div>
+        <div class="explanation" id="explanation"></div>
+      </div>
+
+      <button id="checkButton" class="btn" type="button">CONTROLEER</button>
+      <button id="continueButton" class="btn btn-secondary hidden" type="button">DOORGAAN</button>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" class="card hidden">
+      <div class="results-section">
+        <h2>🎉 Alles behandeld!</h2>
+        <div class="score-circle">
+          <div class="score-text" id="finalScore">0%</div>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value" id="finalMastered">0</div>
+            <div class="stat-label">Beheerst</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="finalTotal">0</div>
+            <div class="stat-label">Totaal items</div>
+          </div>
+        </div>
+        <button class="btn" id="restartBtn" type="button">Nieuwe Quiz Starten 🔄</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+    // -------------------------
+    //   STATE (spaced repetition)
+    // -------------------------
+    let courseContent = "";
+    let items = []; // [{ id, source, question, options, correctAnswer, explanation, mastered, wrongCount }]
+    let queue = []; // array of item ids in the order to practice
+    let selectedOptionIndex = null;
+
+    let totalWrong = 0;
+    const MASTER_THRESHOLD = 1; // verander naar 2 als je "2x correct" wil vóór beheerst.
+
+    // Externe vragen (upload)
+    let externalQuestionsLoaded = false;
+    let externalQuestionSetTitle = "";
+
+    // -------------------------
+    //   INGEBOUWDE VRAGENSET (hardcoded)
+    // -------------------------
+    const EMBEDDED_QUESTION_SET = {"title": "ULM Reglementering - Ultra Exam Set (350 vragen) (zonder KB artikel-vragen)", "masterThreshold": 1, "questions": [{"id": "e1", "question": "Je vertrekt VFR uit een ongecontroleerd veld en wil een militaire CTR kruisen tijdens openingsuren. Wat doe je eerst?", "options": ["Je zet 7000 en kruist zonder oproep", "Je vraagt vooraf toelating via radio aan de betrokken verkeersleiding op de aangeduide frequentie", "Je dient verplicht een IFR-vliegplan in", "Je wacht tot na sluitingstijd en vliegt dan binnen 2 NM op 2000 ft"], "correctIndex": 1, "explanation": "Tijdens openingsuren is doorvliegen van een militaire CTR/TMA onderworpen aan voorafgaande toelating via radio (p. 22/83).", "difficulty": "easy"}, {"id": "e2", "question": "Buiten openingsuren wil je een militair luchtvaartterrein overvliegen op 2000 ft AMSL en binnen 2 NM. Wat is correct?", "options": ["Toegestaan als je onder 250 kt blijft", "Niet toegestaan, tenzij je toelating hebt van het Ministerie van Landsverdediging", "Altijd toegestaan met transponder 5101", "Toegestaan als je ATIS beluistert"], "correctIndex": 1, "explanation": "Buiten openingsuren: niet overvliegen binnen 2 NM tot 2500 ft AMSL, tenzij met toelating (p. 22/83).", "difficulty": "easy"}, {"id": "e3", "question": "Je bent onderweg, VFR, en de zichtbaarheid daalt onder VMC-minima. Wat is de correcte conclusie?", "options": ["Je zit in IMC; de vlucht mag dan alleen volgens IFR plaatsvinden", "Je blijft VFR want je bent in klasse G", "Je kan altijd Special VFR aanvragen in open luchtruim", "Je zet transponder 2000 en gaat door"], "correctIndex": 0, "explanation": "IMC = slechter dan VMC; vlucht mag dan alleen volgens IFR (p. 23/83).", "difficulty": "easy"}, {"id": "e4", "question": "Je wil in een CTR landen. De grondzichtbaarheid is 6 km maar wolkenbasis 1200 ft. Zonder Special VFR: wat doe je?", "options": ["Landen mag: zichtbaarheid voldoet", "Niet landen: wolkenbasis is lager dan 1500 ft", "Landen mag als je onder de wolken blijft", "Landen mag als je QFE instelt"], "correctIndex": 1, "explanation": "Zonder Special VFR geen landing/opstijgen in CTR/circuit als wolkenbasis < 1500 ft of grondzicht niet > 5 km (p. 25/83).", "difficulty": "easy"}, {"id": "e5", "question": "Tijdens taxi zie je een oplichtende stop bar. Wat is de juiste handeling?", "options": ["Doorrijden tot aan de baan", "Stoppen en wachten; pas verder als de stop bar gedoofd is", "Alleen stoppen als ATC dat zegt via radio", "Stop bars gelden niet voor VFR"], "correctIndex": 1, "explanation": "Stoppen en wachten aan elke oplichtende stop bar; pas verder als deze gedoofd is (p. 30/83).", "difficulty": "easy"}, {"id": "e6", "question": "Je voert een overmachtlanding uit in een veld. Welke combinatie acties is juist?", "options": ["Alleen de brandweer bellen en later invullen in logboek", "Zo snel mogelijk luchtverkeerregeling verwittigen; politie voor vaststelling; reisdagboek laten viseren; douane verwittigen indien van buiten Schengen", "Onmiddellijk doorstarten zodra mogelijk", "Alleen een NOTAM publiceren"], "correctIndex": 1, "explanation": "De cursus somt deze meldingen/acties op bij overmachtlanding (p. 10/83).", "difficulty": "easy"}, {"id": "e7", "question": "Na overmachtlanding buiten een erkend terrein lijkt er geen schade. Je wil terug opstijgen. Wat is correct?", "options": ["Je mag opstijgen als je mechanisch checkt", "Je mag niet opstijgen zonder toelating van de DGL", "Je mag opstijgen als je onder 500 ft blijft", "Je mag opstijgen als je een vliegplan indient"], "correctIndex": 1, "explanation": "Niet terug opstijgen zonder toelating van de DGL (p. 10/83).", "difficulty": "easy"}, {"id": "e8", "question": "Je vliegt VFR op magnetische route 210° in niet-gecontroleerd luchtruim boven 3000 ft AGL. Welke kruisniveaulogica hoort erbij?", "options": ["VFR onpaar duizendtal + 500 ft", "VFR paar duizendtal + 500 ft", "VFR veelvoud van 1000 ft", "Vrij niveau (geen semi-circular)"], "correctIndex": 1, "explanation": "Route 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "easy"}, {"id": "e9", "question": "Je vliegt VFR op magnetische route 040° boven 3000 ft AGL. Welke kruisniveaulogica hoort erbij?", "options": ["VFR onpaar duizendtal + 500 ft", "VFR paar duizendtal + 500 ft", "IFR niveaus gebruiken", "Altijd FL195"], "correctIndex": 0, "explanation": "Route 000°–179° => VFR onpaar duizendtal + 500 ft (p. 26/83).", "difficulty": "easy"}, {"id": "e10", "question": "Je zit tussen 3000 ft AGL en 4500 ft AMSL. Welke drukinstelling is verplicht als referentie?", "options": ["QFE", "Lokale QNH van vertrek", "Regionale QNH", "1013,2 hPa"], "correctIndex": 2, "explanation": "Tussen 3000 ft AGL en 4500 ft AMSL: regionale QNH verplicht (p. 26/83).", "difficulty": "easy"}, {"id": "e11", "question": "Je krijgt van ATC de instructie: 'Squawk IDENT'. Wat doe je?", "options": ["Je zet code 7700", "Je drukt op IDENT zodat je blip extra oplicht", "Je zet transponder op SBY", "Je verandert naar code 7000"], "correctIndex": 1, "explanation": "IDENT-knop laat de code/blip extra oplichten op verzoek van de verkeersleider (p. 47/83).", "difficulty": "easy"}, {"id": "e12", "question": "Je radio valt uit in gecontroleerd gebied. Welke transpondercode zet je?", "options": ["7600", "7700", "7500", "2000"], "correctIndex": 0, "explanation": "7600 = Radio failure (p. 48/83).", "difficulty": "easy"}, {"id": "e13", "question": "Je ziet een Aldis-lamp signaal: reeks rode schitterlichten terwijl je in de lucht bent. Wat betekent dit voor jou?", "options": ["Landen toegestaan", "Keer terug om te landen", "Luchtvaartterrein onveilig: land niet", "Wijk uit en blijf cirkelen (definitief)"], "correctIndex": 2, "explanation": "Reeks rode schitterlichten naar vliegtuig in de lucht: luchtvaartterrein onveilig, land niet (p. 33/83).", "difficulty": "easy"}, {"id": "e14", "question": "Je ziet een Aldis-lamp signaal: blijvend rood licht terwijl je op de grond bent. Wat doe je?", "options": ["Stop", "Taxiën toegestaan", "Opstijgen toegestaan", "Keer terug naar vertrekpunt"], "correctIndex": 0, "explanation": "Blijvend rood licht voor vliegtuig op de grond = stop (p. 33/83).", "difficulty": "easy"}, {"id": "e15", "question": "Je ziet één rode vuurpijl terwijl je in circuit zit. Wat is de juiste reactie?", "options": ["Doorgaan met landen", "Niet landen; landingstoelating volgt later", "Keer terug om te landen", "Taxiën toegestaan"], "correctIndex": 1, "explanation": "Één rode vuurpijl: niet landen, landingstoelating wordt nadien gegeven (p. 33/83).", "difficulty": "easy"}, {"id": "e16", "question": "In het seinenvierkant zie je een witte halter met zwarte dwarsbalken. Wat mag je dan?", "options": ["Alle bewegingen uitsluitend op rijbanen", "Alleen landen/opstijgen op landingsbanen; taxi/andere bewegingen niet beperkt tot rijbanen", "Verboden te landen", "Rechts circuit verplicht"], "correctIndex": 1, "explanation": "Witte halter met zwarte dwarsbalken: landen/opstijgen alleen op landingsbanen; andere bewegingen niet beperkt tot rijbanen (p. 34/83).", "difficulty": "easy"}, {"id": "e17", "question": "Je ziet twee zwarte ballen aan een mast bij het veld. Wat moet je verwachten?", "options": ["Start richting staat vast op RWY 36", "Zweefvliegactiviteiten zijn aan de gang", "Verboden te landen", "Opstijgen toegestaan"], "correctIndex": 1, "explanation": "Twee zwarte ballen: zweefvliegactiviteiten aan de gang (p. 36/83).", "difficulty": "easy"}, {"id": "e18", "question": "Je vliegt met een ingediend vliegplan en landt op een veld zonder ATS. Wat voorkomt onnodige SAR-actie?", "options": ["Niets doen; plan sluit automatisch", "Onmiddellijk na landing aankomstbericht aan Brussels ARO", "Pas bij thuiskomst mailen", "Transponder op 7000 zetten"], "correctIndex": 1, "explanation": "Bij bestemming zonder ATS: piloot meldt onmiddellijk na landing aan Brussels ARO; anders risico op SAR (p. 51/83).", "difficulty": "easy"}, {"id": "e19", "question": "Je dient een vliegplan in voor een vlucht die ATC-diensten zal gebruiken. Hoe lang vóór EOBT moet dit minstens gebeuren?", "options": ["10 min", "15 min", "30 min", "60 min"], "correctIndex": 2, "explanation": "Minstens 30 minuten vóór EOBT (p. 48–49/83).", "difficulty": "easy"}, {"id": "e20", "question": "Je overschrijdt EOBT met 20 minuten voor een gecontroleerde vlucht en doet niets. Wat is correct?", "options": ["Vliegplan blijft geldig", "Vliegplan is niet meer geldig; nieuw/aanpassen nodig", "Alleen de route vervalt, rest blijft", "Je moet enkel een NOTAM checken"], "correctIndex": 1, "explanation": "Gecontroleerde vlucht: >15 min overschrijding EOBT => vliegplan ongeldig (p. 48–49/83).", "difficulty": "easy"}, {"id": "e21", "question": "Je wil een VFR vlucht uitvoeren in klasse A. Wat is correct?", "options": ["Toegestaan met Special VFR", "Verboden", "Toegestaan als je onder FL100 blijft", "Toegestaan met transponder ALT"], "correctIndex": 1, "explanation": "VFR in klasse A is verboden (p. 23/83).", "difficulty": "easy"}, {"id": "e22", "question": "Je vliegt in klasse G en krijgt geen ATS. Welke standaard squawk hoort daarbij?", "options": ["2000", "7000", "5101", "7700"], "correctIndex": 1, "explanation": "7000 = when not receiving ATS (p. 48/83).", "difficulty": "medium"}, {"id": "e23", "question": "Je vliegt in klasse G met Mode S en wil enkel 'monitoring' volgens de cursus. Welke code kies je?", "options": ["5101", "7000", "0041", "2000"], "correctIndex": 0, "explanation": "5101 = Monitoring in Class G (Mode S) (p. 47–48/83).", "difficulty": "medium"}, {"id": "e24", "question": "Je ziet pyrotechnische signalen: rode en groene sterren bij ontploffing met tussenpauze ±10 s. Wat is je actie?", "options": ["Land onmiddellijk", "Verlaat zo snel mogelijk het gebied (nabij P/R/D)", "Zet transponder 7700", "Blijf cirkelen tot ATC roept"], "correctIndex": 1, "explanation": "Betekent nabij P/R/D-gebied; zo snel mogelijk verwijderen (p. 32/83).", "difficulty": "medium"}, {"id": "e25", "question": "Je wil in een AWY vliegen. Welke ondergrens moet je verwachten voor de luchtweg?", "options": ["GND", "1500 ft AMSL", "4500 ft QNH", "FL195"], "correctIndex": 2, "explanation": "Onderste altitude van AWY’s is 4500 ft QNH (p. 18/83).", "difficulty": "medium"}, {"id": "e26", "question": "Je gebruikt de hoogtemeter voor navigatie boven zeeniveau. Welke instelling gebruik je?", "options": ["QFE", "QNH", "1013,2 hPa", "Vrije instelling"], "correctIndex": 1, "explanation": "QNH geeft altitude boven MSL en is handig voor navigatie (p. 11/83).", "difficulty": "medium"}, {"id": "e27", "question": "Je staat op de startbaan en wil dat je hoogtemeter 0 aangeeft. Welke instelling gebruik je?", "options": ["QFE", "QNH", "1013,2 hPa", "Regionale QNH"], "correctIndex": 0, "explanation": "QFE op de startbaan => hoogtemeter 0 (p. 11/83).", "difficulty": "medium"}, {"id": "e28", "question": "Twee toestellen taxiën met samenlopende koers; aanrijdingsgevaar. Wie heeft voorrang?", "options": ["Het linkse toestel", "Het rechtse toestel", "Het toestel dat sneller rijdt", "Het toestel met hogere massa"], "correctIndex": 1, "explanation": "Bij samenlopende koers: rechts heeft voorrang (p. 30/83).", "difficulty": "medium"}, {"id": "e29", "question": "Op een veld met sleep: het sleepvliegtuig met zwever op sleep nadert. Hoe geldt dit voor voorrangsregels?", "options": ["Als twee toestellen: de zwever heeft altijd voorrang", "Als één luchtvaartuig", "Als formatievlucht", "Als noodsituatie"], "correctIndex": 1, "explanation": "Sleepvliegtuig + zwever op sleep = één luchtvaartuig voor voorrangsregels (p. 32/83).", "difficulty": "medium"}, {"id": "e30", "question": "Je ziet in het seinenvierkant een rood vierkant met één gele diagonaal. Wat betekent dit?", "options": ["Verboden te landen", "Opletten bij het landen wegens slechte toestand of andere reden", "Rechts circuit verplicht", "Zweefvluchten aan de gang"], "correctIndex": 1, "explanation": "Rood vierkant met één gele diagonaal = opletten bij landen (p. 34/83).", "difficulty": "medium"}, {"id": "e31", "question": "Je wil VFR vliegen met een zichtbaarheid in vlucht van 1500 m. Wanneer kan dat volgens de cursus (algemeen)?", "options": ["Altijd toegestaan onder FL100", "Alleen als IAS ≤ 140 kt én er weinig ander verkeer is zodat tijdig zien/ontwijken mogelijk blijft", "Alleen in klasse C", "Alleen met IFR-licentie"], "correctIndex": 1, "explanation": "Zichtbaarheid in vlucht kan herleid worden tot 1500 m bij IAS ≤ 140 kt en weinig verkeer/tijdig zien en ontwijken (p. 24/83).", "difficulty": "medium"}, {"id": "e32", "question": "Je wil een nacht-VFR (algemeen) en je verwijdert je van de luchthaven. Welke minimum zicht en wolkenbasis gelden?", "options": ["3 km en 1000 ft", "5 km en 1500 ft", "8 km en 2000 ft", "1500 m en clear of clouds"], "correctIndex": 1, "explanation": "VFR nacht: zichtbaarheid 5 km zonder uitzondering, wolkenbasis 1500 ft (p. 25/83).", "difficulty": "medium"}, {"id": "e33", "question": "Je wil (algemene) nacht-VFR vliegen: welke minimumhoogte geldt?", "options": ["500 ft boven terrein", "1000 ft boven hoogste obstakel binnen 8 km", "1500 ft boven MSL", "FL 35"], "correctIndex": 1, "explanation": "Minimum vlieghoogte nacht-VFR: 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "medium"}, {"id": "e34", "question": "Je vliegt ULM en het is nacht. Je overweegt een lokale vlucht zonder verwijderen van het terrein. Wat is correct?", "options": ["Toegestaan als je onder 1000 ft blijft", "Niet toegestaan: ULM/DPM mogen ’s nachts niet vliegen", "Toegestaan als je een vliegplan indient", "Toegestaan met transponder 5101"], "correctIndex": 1, "explanation": "Opmerking in cursus: ULM/DPM mogen ’s nachts niet vliegen (p. 25/83).", "difficulty": "medium"}, {"id": "e35", "question": "Je ziet op de kaart een TSA. Wat moet je doen om zeker te weten of ze actief is?", "options": ["Alleen naar arcering kijken", "NOTAM’s raadplegen", "Transpondercode 2000 instellen", "ATIS beluisteren"], "correctIndex": 1, "explanation": "NOTAM’s geven aan of een zone (bv. TSA) actief is (p. 55/83).", "difficulty": "medium"}, {"id": "e36", "question": "Je wil een vliegplan online indienen. Wat is correct?", "options": ["Je mag elk documentformaat gebruiken", "Je moet het door Skeyes ter beschikking gestelde elektronisch document gebruiken", "Online indienen is niet mogelijk", "Je moet per se per radio indienen"], "correctIndex": 1, "explanation": "Vliegplannen kunnen via internet; alleen het ter beschikking gesteld elektronisch document mag gebruikt worden (p. 50/83).", "difficulty": "medium"}, {"id": "e37", "question": "Je vult een vliegplan met potlood in om te kunnen gommen. Is dat correct?", "options": ["Ja, aanbevolen", "Nee: met zwarte balpen en in hoofdletters", "Ja, zolang het leesbaar is", "Alleen bij VFR"], "correctIndex": 1, "explanation": "Vliegplan: zwarte balpen en hoofdletters (p. 50/83).", "difficulty": "medium"}, {"id": "e38", "question": "Je wordt gevraagd om je ontvangen optische signalen te bevestigen terwijl je in de lucht bent (overdag). Hoe doe je dat?", "options": ["IDENT drukken", "Met vleugels schommelen (niet in finale)", "Landingslicht knipperen", "Transponder op SBY"], "correctIndex": 1, "explanation": "Bevestigen: vleugels schommelen overdag in de lucht, niet in finale (p. 33/83).", "difficulty": "medium"}, {"id": "e39", "question": "Je ziet in de lucht een Aldis-lamp signaal: reeks groene schitterlichten. Wat moet je doen?", "options": ["Landen toegestaan", "Keer terug om te landen (verdere toelatingen volgen later)", "Taxiën toegestaan", "Stop"], "correctIndex": 1, "explanation": "Reeks groene schitterlichten in de lucht = keer terug om te landen (p. 33/83).", "difficulty": "medium"}, {"id": "e40", "question": "Je krijgt te maken met kaping/interference. Welke transpondercode hoort hierbij?", "options": ["7500", "7600", "7700", "7000"], "correctIndex": 0, "explanation": "7500 = Interference (kaping of gelijkaardig) (p. 48/83).", "difficulty": "medium"}, {"id": "e41", "question": "Je vlucht is VFR en je wil onder 900 m AGL blijven. Wat is correct over het kruisniveau?", "options": ["Je moet semi-circular system volgen", "Kruisniveau is vrij (je kiest zelf), met respect voor minimumhoogte", "Je moet altijd 1500 ft AGL houden", "Je moet altijd QNH 1013 instellen"], "correctIndex": 1, "explanation": "Onder 900 m AGL is kruisniveau vrij (p. 26/83).", "difficulty": "medium"}, {"id": "e42", "question": "Je passeert een dichtbevolkt gebied. Welke minimumhoogte geldt (tenzij start/landing)?", "options": ["500 ft boven hoogste obstakel binnen 600 m", "1000 ft boven hoogste obstakel binnen 600 m", "500 ft boven grond/water", "Geen minimumhoogte"], "correctIndex": 1, "explanation": "Dichtbevolkt: minstens 1000 ft boven hoogste obstakel binnen 600 m (p. 25/83).", "difficulty": "medium"}, {"id": "e43", "question": "Je vliegt buiten dichtbevolkt gebied. Wat is de algemene minimumhoogte (tenzij start/landing)?", "options": ["500 ft boven grond/water of 500 ft boven hoogste obstakel in straal 500 ft", "1000 ft boven hoogste obstakel binnen 8 km", "1500 ft AGL", "FL 45"], "correctIndex": 0, "explanation": "Algemeen: niet lager dan 500 ft boven grond/water of 500 ft boven hoogste obstakel in straal 500 ft (p. 25/83).", "difficulty": "medium"}, {"id": "e44", "question": "Je wil weten wat 'regionale QNH' precies betekent wanneer die als verplicht referentiepunt wordt genoemd. Wat is correct?", "options": ["Gemiddelde QNH van 4 velden", "Laagste QNH gemeten op 4 burgerlijke en 7 militaire vliegvelden", "QFE van de startbaan", "Altijd 1013,2 hPa"], "correctIndex": 1, "explanation": "Opmerking: regionale QNH = laagste QNH waarde gemeten op 4 burgerlijke en 7 militaire vliegvelden (p. 26/83).", "difficulty": "medium"}, {"id": "e45", "question": "Je leest 0047 op je transponder en vraagt je af waarvoor die reeks dient. Wat is het beste antwoord?", "options": ["Standaard IFR-code", "VFR-code uit de reeks Brussels Info (0041–0057)", "Noodcode", "Radio failure code"], "correctIndex": 1, "explanation": "De cursus: 0041–0057 = VFR codes van Brussels Info (p. 48/83).", "difficulty": "medium"}, {"id": "e46", "question": "Je wil een zone op de kaart correct lateraal bepalen. Wat moet je doen?", "options": ["Alleen afgaan op de stippellijn op de kaart", "AIP raadplegen om laterale begrenzingen juist te bepalen", "Alleen ATIS beluisteren", "Alleen QNH instellen"], "correctIndex": 1, "explanation": "De cursus: AIP raadplegen om laterale begrenzingen juist te bepalen (p. 55/83).", "difficulty": "medium"}, {"id": "e47", "question": "Je vliegt VFR en wil hoger dan FL195. Wat is correct?", "options": ["Altijd toegestaan als je VMC hebt", "Niet toegestaan tenzij je toelating hebt", "Altijd toegestaan in klasse G", "Alleen toegestaan met code 2000"], "correctIndex": 1, "explanation": "VFR niet hoger dan FL195 tenzij mits toelating (p. 25/83).", "difficulty": "medium"}, {"id": "e48", "question": "Je vliegt VFR binnen Schengen en blijft volledig binnen Brussels FIR. Is een vliegplan verplicht?", "options": ["Ja, altijd", "Nee, niet verplicht voor Brussels FIR", "Alleen als je boven FL100 gaat", "Alleen als je geen radio hebt"], "correctIndex": 1, "explanation": "VFR binnen Schengen: geen FLP nodig voor Brussels FIR (p. 48/83).", "difficulty": "medium"}, {"id": "e49", "question": "Je wil een CTR kruisen om te landen en ATC vraagt naar je vliegplan. Is een vliegplanformulier altijd verplicht om ATC clearance te krijgen?", "options": ["Ja, altijd", "Nee, je bent niet verplicht een vliegplanformulier in te dienen om ATC clearance te krijgen voor een vlucht naar een gecontroleerd vliegveld", "Ja, maar alleen bij VFR", "Ja, alleen binnen Schengen"], "correctIndex": 1, "explanation": "De cursus: gezagvoerder is niet verplicht om een vliegplan formulier in te dienen om een ATC clearance te krijgen voor een vlucht naar een gecontroleerd vliegveld (p. 48/83).", "difficulty": "medium"}, {"id": "e50", "question": "Je vertrekt van een privaat vliegveld en dient een vliegplan in. Wie is verantwoordelijk dat het vliegplan de betrokken ATS bereikt?", "options": ["ATS zelf", "De gezagvoerder", "Skeyes automatisch", "De luchthavenuitbater"], "correctIndex": 1, "explanation": "De cursus: gezagvoerder die een vliegplan indiende vanaf privaat veld is verantwoordelijk voor verdere afhandeling zodat het de ATS bereikt (p. 48/83).", "difficulty": "medium"}, {"id": "e51", "question": "Je wil een ULM-vlucht uitvoeren bij dag, met zicht op de grond, maar de zichtbaarheid is 4 km. Wat is correct volgens het KB-fragment?", "options": ["Toegestaan als je in het circuit blijft", "Niet toegestaan: minimum is 5 km (circuit-oefening uitzondering 3 km)", "Toegestaan met Special VFR", "Toegestaan als je onder 900 m AGL blijft"], "correctIndex": 1, "explanation": "KB-fragment: zichtbaarheid niet minder dan 5 km; uitzondering circuit-oefening: 3 km (p. 79/83).", "difficulty": "medium"}, {"id": "e52", "question": "Bij circuit-oefening met een ULM is de zichtbaarheid 3 km. Wat is correct?", "options": ["Niet toegestaan; altijd 5 km", "Toegestaan: circuit-oefening heeft uitzondering tot minimaal 3 km", "Alleen toegestaan met IFR", "Alleen toegestaan met transponder 7700"], "correctIndex": 1, "explanation": "KB-fragment: uitzondering voor oefening in circuit: 3 km (p. 79/83).", "difficulty": "medium"}, {"id": "e53", "question": "Je wil een acrobatische manoeuvre uitvoeren met een ULM. Wat is correct?", "options": ["Toegestaan boven 600 m", "Verboden", "Toegestaan met DGL-toelating", "Toegestaan enkel in klasse G"], "correctIndex": 1, "explanation": "KB-fragment: ULM’s mogen geen acrobatische vluchten uitvoeren (p. 79/83).", "difficulty": "medium"}, {"id": "e54", "question": "Na een incident met een ULM: binnen welke termijn moet je schriftelijk melden aan de DG (tenzij fysieke verhindering)?", "options": ["24 uur", "48 uur", "7 dagen", "30 dagen"], "correctIndex": 1, "explanation": "KB-fragment: uiterlijk binnen 48 uur (p. 79/83).", "difficulty": "hard"}, {"id": "e55", "question": "Je plant een navigatievlucht buiten de omgeving van het vertrekveld. Welke voorbereiding is volgens de cursus verplicht?", "options": ["Alleen brandstof controleren", "Enkel NOTAM’s bekijken", "Studie van actuele weerinformatie, beschikbare inlichtingen, brandstofvoorziening en alternatieve koers", "Alleen route in GPS programmeren"], "correctIndex": 2, "explanation": "De cursus vereist vóór een vlucht buiten de nabijheid van het veld een studie van actuele weerinformatie, beschikbare inlichtingen, brandstof en alternatieve koers (p. 8/83).", "difficulty": "hard"}, {"id": "e56", "question": "Je vliegt over een verzameling mensen tijdens een evenement. Welke hoogte moet je minimaal aanhouden?", "options": ["500 ft boven grond", "1000 ft boven hoogste obstakel binnen 600 m", "1500 ft boven terrein", "Geen beperking zolang VFR"], "correctIndex": 1, "explanation": "Over verzamelingen personen/dichtbevolkte gebieden: minstens 1000 ft boven hoogste obstakel binnen 600 m (p. 25/83).", "difficulty": "hard"}, {"id": "e57", "question": "Je ziet tijdens taxiën een toestel recht op je afkomen. Wat schrijft de cursus voor?", "options": ["Beide toestellen stoppen en waar mogelijk naar rechts uitwijken", "Het zwaarste toestel heeft voorrang", "Je blijft rijden als je op hoofd-taxiway zit", "Alleen toestel zonder radio stopt"], "correctIndex": 0, "explanation": "Bij taxiën recht naar elkaar toe: beide toestellen stoppen en waar mogelijk naar rechts uitwijken (p. 30/83).", "difficulty": "hard"}, {"id": "e58", "question": "Tijdens een gecontroleerde VFR-vlucht geeft ATC een instructie die volgens jou onveilig is. Wat is toegestaan?", "options": ["Instructie altijd volgen", "Afwijken indien noodzakelijk voor veiligheid", "Alleen afwijken in klasse G", "Altijd eerst toestemming vragen om af te wijken"], "correctIndex": 1, "explanation": "Gezagvoerder mag afwijken van regels/instructies indien veiligheidsredenen dit vereisen (p. 8/83).", "difficulty": "hard"}, {"id": "e59", "question": "Je vliegt boven water en wilt lager vliegen voor sightseeing. Wat blijft gelden?", "options": ["Geen minimumhoogte boven water", "Minstens 500 ft boven water tenzij start/landing", "Minstens 1000 ft boven water", "Minstens 1500 ft boven MSL"], "correctIndex": 1, "explanation": "Algemene regel: niet lager dan 500 ft boven grond of water tenzij opstijgen of landen (p. 25/83).", "difficulty": "hard"}, {"id": "e60", "question": "Je nadert een veld zonder radioverbinding. Hoe kunnen instructies gegeven worden?", "options": ["Alleen via mobiele telefoon", "Via Aldis-lamp met optische seinen", "Via transponder", "Niet mogelijk zonder radio"], "correctIndex": 1, "explanation": "Optische seinen met Aldis-lamp worden gebruikt wanneer geen radioverbinding mogelijk is (p. 32/83).", "difficulty": "hard"}, {"id": "e61", "question": "Je ziet blijvend groen licht terwijl je op de grond staat. Wat betekent dit?", "options": ["Stop", "Taxiën toegestaan", "Keer terug naar vertrekpunt", "Opstijgen verboden"], "correctIndex": 1, "explanation": "Blijvend groen voor vliegtuig op de grond = taxiën toegestaan (p. 33/83).", "difficulty": "hard"}, {"id": "e62", "question": "Je ziet een opvallende rechtse pijl in het seinenvierkant. Wat betekent dit voor het circuit?", "options": ["Circuit links vliegen", "Circuit rechts vliegen", "Verboden te landen", "Taxiën alleen op rijbanen"], "correctIndex": 1, "explanation": "Rechtse pijl: circuit of deel ervan wordt rechts gevlogen (p. 34/83).", "difficulty": "hard"}, {"id": "e63", "question": "Je vliegt VFR en ontvangt geen ATS. Welke standaardcode gebruik je?", "options": ["2000", "7000", "7600", "7700"], "correctIndex": 1, "explanation": "Code 7000 wordt gebruikt wanneer geen ATS ontvangen wordt (p. 48/83).", "difficulty": "hard"}, {"id": "e64", "question": "Je wil hoger dan FL195 vliegen onder VFR. Wat moet je hebben?", "options": ["Alleen transponder", "Toelating", "IFR-licentie", "Niets extra"], "correctIndex": 1, "explanation": "VFR boven FL195 enkel toegestaan mits toelating (p. 25/83).", "difficulty": "hard"}, {"id": "e65", "question": "Je vliegt met QNH ingesteld en de hoogtemeter toont 2500 ft. Wat geeft dit weer?", "options": ["Hoogte boven startbaan", "Hoogte boven gemiddeld zeeniveau", "Flight level", "Hoogte boven obstakels"], "correctIndex": 1, "explanation": "QNH-instelling geeft altitude boven MSL weer (p. 11/83).", "difficulty": "hard"}, {"id": "e66", "question": "Je vliegt op QFE en leest 1200 ft. Wat betekent dit?", "options": ["1200 ft boven MSL", "1200 ft boven startbaan", "FL12", "1200 ft boven wolkenbasis"], "correctIndex": 1, "explanation": "QFE toont hoogte boven de startbaan (p. 11/83).", "difficulty": "hard"}, {"id": "e67", "question": "Je dient een vliegplan in en wil 6 dagen vooraf indienen. Is dat toegestaan?", "options": ["Ja", "Nee, maximum 5 dagen vooraf", "Alleen voor IFR", "Alleen met toestemming"], "correctIndex": 1, "explanation": "Vliegplan mag niet vroeger dan 5 dagen vooraf worden ingediend (p. 49/83).", "difficulty": "hard"}, {"id": "e68", "question": "Je moet een vliegplan tijdens vlucht indienen. Wanneer moet het ATS dit ontvangen?", "options": ["Minstens 10 minuten vóór binnenvliegen gecontroleerde zone", "Na binnenvliegen zone", "Pas bij landing", "Binnen 1 minuut"], "correctIndex": 0, "explanation": "In-flight vliegplan moet ATS bereiken minstens 10 min vóór binnenvliegen gecontroleerde zone (p. 50/83).", "difficulty": "hard"}, {"id": "e69", "question": "Je ziet twee cijfers nabij de verkeerstoren. Wat betekenen deze?", "options": ["Baanlengte", "Opstijgrichting in tientallen graden magnetisch", "Windkracht", "Transpondercode"], "correctIndex": 1, "explanation": "Twee cijfers geven opstijgrichting aan in tientallen graden magnetisch (p. 36/83).", "difficulty": "hard"}, {"id": "e70", "question": "Welke informatie geeft Mode C/Mode S extra ten opzichte van Mode A?", "options": ["Brandstofniveau", "Hoogte-informatie", "Route", "Weersinformatie"], "correctIndex": 1, "explanation": "Mode C en S voegen hoogte-informatie toe (p. 47/83).", "difficulty": "hard"}, {"id": "e71", "question": "Je vliegt in een AWY. Wie controleert dit luchtruim?", "options": ["Brussels ACC", "Lokaal vliegveld", "Geen controle", "Alleen militair"], "correctIndex": 0, "explanation": "LCTA/AWY worden gecontroleerd door Brussels ACC (p. 14–18/83).", "difficulty": "hard"}, {"id": "e72", "question": "Wat is de eerste regel om botsingen te vermijden volgens de cursus?", "options": ["Gebruik transponder", "KIJK UIT", "Volg ATC", "Gebruik TCAS"], "correctIndex": 1, "explanation": "De cursus benadrukt: belangrijkste regel = KIJK UIT (p. 27/83).", "difficulty": "hard"}, {"id": "e73", "question": "Je ziet een dubbel geel kruis in het seinenvierkant. Wat betekent dit?", "options": ["Zweefvluchten", "Plaats waar sleepkabels losgegooid moeten worden", "Verboden te landen", "Rechts circuit"], "correctIndex": 1, "explanation": "Dubbel geel kruis: plaats waar sleepkabels moeten losgegooid worden (p. 34/83).", "difficulty": "hard"}, {"id": "e74", "question": "Je hebt een vraag over registratie van een ULM en het afleveren van inschrijvingsbewijzen. Bij welke instantie hoort dit volgens de cursus?", "options": ["Skeyes", "Directoraat-Generaal Luchtvaart (DGL)", "KMI", "Douane"], "correctIndex": 1, "explanation": "DGL is belast met o.a. inschrijving/registratie van luchtvaartuigen en het afleveren van inschrijvingsbewijzen (p. 3/83).", "difficulty": "medium", "tags": ["Algemeenheden", "DGL"], "refs": ["p.3/83"]}, {"id": "e75", "question": "Tijdens je vluchtvoorbereiding zoek je officiële info die Skeyes publiceert voor luchtverkeersveiligheid. Wat is de correcte algemene uitspraak uit de cursus?", "options": ["Skeyes baat alle ULM-velden zelf uit", "ULM-velden zijn privaat; Skeyes publiceert wel info nodig voor luchtverkeersveiligheid die raadpleegbaar moet zijn op elke ulmodroom", "Skeyes is enkel verantwoordelijk voor onderhoud van ULM’s", "Skeyes levert alleen luchtwaardigheidsbewijzen"], "correctIndex": 1, "explanation": "De cursus vermeldt dat ulmodromen privaat uitgebaat worden; Skeyes publiceert de nodige informatie voor luchtverkeersveiligheid, die raadpleegbaar moet zijn (p. 3/83).", "difficulty": "medium", "tags": ["Algemeenheden", "Skeyes"], "refs": ["p.3/83"]}, {"id": "e76", "question": "Je wil in de AIP GEN de betekenis van plaatsindicaties (bv. EBBR) terugvinden. Welke rubriek past hierbij volgens de cursus?", "options": ["METAR", "GEN-informatie (plaatsindicaties/autoriteiten/nationale reglementen)", "NOTAM slot times", "ATIS only"], "correctIndex": 1, "explanation": "In GEN staan o.a. aanduiding van autoriteiten, verwijzing naar nationale reglementen en plaatsindicaties zoals EBBR (p. 5/83).", "difficulty": "medium", "tags": ["AIP", "Algemeenheden"], "refs": ["p.5/83"]}, {"id": "e77", "question": "Je plant een avondvlucht en wil SR/SS-tijden correct bepalen. Welke bron wordt in de cursus als referentie genoemd?", "options": ["Je horloge en gevoel", "Jaarkalender van het KMI", "Transponder data", "Alleen NOTAM’s"], "correctIndex": 1, "explanation": "De cursus verwijst voor SR/SS naar de jaarkalender van het KMI (p. 5/83 en p. 34/83 bij dag/nacht definitie).", "difficulty": "medium", "tags": ["Algemeenheden", "SR/SS"], "refs": ["p.5/83", "p.34/83"]}, {"id": "e78", "question": "Je wordt gecontroleerd en je hebt geen actuele kaarten aan boord. Wat zegt de cursus hierover?", "options": ["Niet nodig als je GPS hebt", "Actuele kaarten moeten aan boord zijn", "Alleen nodig buiten België", "Alleen nodig bij IFR"], "correctIndex": 1, "explanation": "De cursus vermeldt dat actuele kaarten onder de boordstukken horen (KB-fragment/boorddocumentenlijst, p. 69/83).", "difficulty": "medium", "tags": ["Boorddocumenten"], "refs": ["p.69/83"]}, {"id": "e79", "question": "Je ULM is beschadigd geraakt en voldoet mogelijk niet meer aan de eisen. Wat is de correcte conclusie over het inschrijvingsbewijs volgens de cursus?", "options": ["Het blijft geldig", "Het inschrijvingsbewijs is niet meer geldig", "Het wordt automatisch verlengd", "Alleen de verzekering vervalt"], "correctIndex": 1, "explanation": "De cursus vermeldt dat het inschrijvingsbewijs niet meer geldig is als het luchtvaartuig beschadigd is of niet meer voldoet aan eisen (p. 6/83).", "difficulty": "hard", "tags": ["Boorddocumenten"], "refs": ["p.6/83"]}, {"id": "e80", "question": "Je overweegt voorwerpen te laten vallen uit het toestel (bv. klein object) om iets te markeren. Wat is correct volgens de algemene vliegregels?", "options": ["Altijd toegestaan als het klein is", "Verboden om voorwerpen uit te werpen of af te werpen, behalve in nood en/of met toelating", "Toegestaan in klasse G", "Toegestaan boven 3000 ft AGL"], "correctIndex": 1, "explanation": "De cursus behandelt dat het uitwerpen/afwerpen van voorwerpen niet toegestaan is, behoudens uitzonderingen (Algemene vliegregels, p. 9/83).", "difficulty": "hard", "tags": ["Algemene vliegregels"], "refs": ["p.9/83"]}, {"id": "e81", "question": "Je wil alcohol drinken vlak voor de vlucht. Welke regel uit de cursus past hierbij?", "options": ["Toegestaan zolang je je goed voelt", "Verboden; alcohol en drugs zijn niet toegestaan voor uitvoering van taken als bemanningslid", "Alleen verboden bij IFR", "Toegestaan bij lokale vlucht"], "correctIndex": 1, "explanation": "De cursus vermeldt dat alcohol en drugs verboden zijn voor uitvoering van taken (Algemene vliegregels, p. 9/83).", "difficulty": "medium", "tags": ["Algemene vliegregels"], "refs": ["p.9/83"]}, {"id": "e82", "question": "Je krijgt van ATC 'QNH 1008' en je wil je altitude boven MSL correct aflezen. Wat doe je?", "options": ["Zet 1013,2 hPa", "Zet QNH 1008 op de hoogtemeter", "Zet QFE", "Laat instelling ongewijzigd"], "correctIndex": 1, "explanation": "QNH instelling geeft altitude boven MSL; je stelt de opgegeven QNH in (p. 11/83).", "difficulty": "easy", "tags": ["Hoogtemeter"], "refs": ["p.11/83"]}, {"id": "e83", "question": "Je vliegt in klasse G en je IAS is 260 kt. Wat zegt de cursus over de snelheidsbeperking in klasse G?", "options": ["Geen beperking", "250 kt IAS", "140 kt IAS", "200 kt IAS"], "correctIndex": 1, "explanation": "De cursus vermeldt voor klasse G een snelheidsbeperking van 250 kt IAS (p. 22/83).", "difficulty": "medium", "tags": ["Luchtruim", "Klasse G"], "refs": ["p.22/83"]}, {"id": "e84", "question": "Je wil een militaire basis vermijden omdat de bedrijvigheid op elk moment kan hervatten. Welke CTR/TMA’s raadt de cursus aan te vermijden?", "options": ["Enkel EBBR", "EBBE, EBCV, EBFS, EBBL, EBEN, EBLG en EBBT", "Alleen EBOS", "Enkel de Franse CTR’s"], "correctIndex": 1, "explanation": "De cursus raadt aan CTR/TMA’s van o.a. EBBE, EBCV, EBFS, EBBL, EBEN, EBLG en EBBT te vermijden (p. 22–23/83).", "difficulty": "hard", "tags": ["Luchtruim", "Militair"], "refs": ["p.22-23/83"]}, {"id": "e85", "question": "Je overweegt een vlucht nabij Kleine Brogel/Florennes. Wat is correct over het QRA R-gebied volgens de cursus?", "options": ["Actief enkel via NOTAM", "Altijd verboden, straal 2 NM, van GND tot FL 95", "Alleen verboden boven FL195", "Toegestaan met transponder 7000"], "correctIndex": 1, "explanation": "De cursus: QRA op Kleine Brogel en Florennes: R-gebied altijd verboden, 2 NM, GND–FL95 (p. 22/83).", "difficulty": "hard", "tags": ["Luchtruim", "R-gebied"], "refs": ["p.22/83"]}, {"id": "e86", "question": "Je vliegt VFR boven FL100. Welke minimum flight visibility en wolkenafstanden worden in de cursus-tabel als voorbeeld gegeven?", "options": ["5 km; 1500 m horizontaal en 1000 ft verticaal", "8 km; 1500 m horizontaal en 1000 ft verticaal", "3 km; clear of clouds", "1500 m; clear of clouds"], "correctIndex": 1, "explanation": "Voorbeeldtabel: at and above FL100 (A–G) 8 km zicht, 1500 m horizontaal en 1000 ft verticaal (p. 23/83).", "difficulty": "hard", "tags": ["VFR minima"], "refs": ["p.23/83"]}, {"id": "e87", "question": "Je vliegt VFR onder FL100 en boven 3000 ft AMSL in klasse D. Welke minima geeft de cursus-tabel als voorbeeld?", "options": ["5 km zicht; 1500 m hor / 1000 ft ver", "8 km zicht; clear of clouds", "1500 m zicht; clear of clouds", "3 km zicht; 600 m hor / 500 ft ver"], "correctIndex": 0, "explanation": "Onder FL100 en boven 3000 ft AMSL (A–G): 5 km, 1500 m horizontaal en 1000 ft verticaal (p. 23/83).", "difficulty": "hard", "tags": ["VFR minima"], "refs": ["p.23/83"]}, {"id": "e88", "question": "Je vliegt VFR in klasse G op of onder 3000 ft AMSL. Welke minima noemt de cursus als voorbeeld?", "options": ["5 km zicht; clear of clouds en in sight of surface", "8 km zicht; 1500 m/1000 ft", "5 km zicht; 1500 m/1000 ft", "1500 m zicht; clear of clouds en in sight of surface"], "correctIndex": 0, "explanation": "Voor klasse F/G op of onder 3000 ft AMSL: 5 km, clear of clouds, 3000 ft AMSL en in sight of surface (p. 23/83).", "difficulty": "hard", "tags": ["VFR minima"], "refs": ["p.23/83"]}, {"id": "e89", "question": "Je vliegt VFR in klasse G en wil de zichtbaarheid in vlucht reduceren naar 1500 m. Welke combinatie voorwaarden uit de cursus moet tegelijk gelden?", "options": ["IAS > 140 kt en veel verkeer", "IAS ≤ 140 kt en weinig ander verkeer zodat tijdig zien/ontwijken mogelijk blijft", "Alleen 'clear of clouds'", "Alleen onder 500 ft AGL"], "correctIndex": 1, "explanation": "De cursus: zichtbaarheid kan herleid worden tot 1500 m als IAS ≤ 140 kt én weinig verkeer zodat tijdig zien/ontwijken mogelijk is (p. 24/83).", "difficulty": "hard", "tags": ["VFR minima"], "refs": ["p.24/83"]}, {"id": "e90", "question": "Voor helikopters noemt de cursus een afwijking op zichtbaarheid. Wat is correct?", "options": ["Minimum 5 km altijd", "Mogen met minder dan 1500 m, met minimum 800 m, mits aangepaste snelheid om verkeer/hindernissen te vermijden", "Minimum 3 km", "Minimum 1 km zonder voorwaarden"], "correctIndex": 1, "explanation": "De cursus: helikopters mogen met zichtbaarheid <1500 m tot minimum 800 m mits aangepaste snelheid (p. 25/83).", "difficulty": "hard", "tags": ["VFR minima", "Helikopter"], "refs": ["p.25/83"]}, {"id": "e91", "question": "Twee luchtvaartuigen naderen elkaar frontaal in de lucht. Wat is de basisactie volgens voorrangsregels?", "options": ["Beide wijken uit naar links", "Beide wijken uit naar rechts", "Het zwaardere toestel heeft voorrang", "Het toestel met radio heeft voorrang"], "correctIndex": 1, "explanation": "Bij frontale nadering wijken beide uit naar rechts; dit is een standaard voorrangsprincipe (Voorangsregels, p. 27–32/83).", "difficulty": "medium", "tags": ["Voorrang"], "refs": ["p.27-32/83"]}, {"id": "e92", "question": "In het seinenvierkant zie je een rood vierkant met twee gele diagonalen. Wat betekent dit?", "options": ["Opletten bij landing", "Verboden te landen", "Zweefvluchten aan de gang", "Circuit rechts"], "correctIndex": 1, "explanation": "Rood vierkant met twee gele diagonalen = verboden te landen (p. 34/83).", "difficulty": "easy", "tags": ["Seinenvierkant"], "refs": ["p.34/83"]}, {"id": "e93", "question": "In het seinenvierkant staat een witte of oranje landings-T. In welke richting moet je landen en opstijgen?", "options": ["Van de top naar de voet (dwarsbalk naar staande been)", "In de richting van het staande been en van de voet naar de top (dwarsbalk)", "T is enkel decoratie", "Altijd tegen de wind ongeacht T"], "correctIndex": 1, "explanation": "Landings-T: landen/opstijgen in de richting van het staande been en van de voet van de T naar de top (dwarsbalk) (p. 34/83).", "difficulty": "medium", "tags": ["Seinenvierkant"], "refs": ["p.34/83"]}, {"id": "e94", "question": "In het seinenvierkant zie je een dubbel wit kruis. Wat betekent dit?", "options": ["Sleepkabel losgooien", "Zweefvluchten zijn aan de gang", "Verboden te landen", "Alle bewegingen uitsluitend op rijbanen"], "correctIndex": 1, "explanation": "Dubbel wit kruis = zweefvluchten aan de gang (p. 34/83).", "difficulty": "easy", "tags": ["Seinenvierkant"], "refs": ["p.34/83"]}, {"id": "e95", "question": "Een zwarte letter C op gele achtergrond staat verticaal opgesteld op het terrein. Wat betekent dit?", "options": ["Plaats waar meldingen van het luchtverkeer worden gedaan (en waar men landingstaks kan betalen)", "Plaats waar sleepkabels los moeten", "Plaats waar landen verboden is", "Plaats waar transponder uit moet"], "correctIndex": 0, "explanation": "Zwarte letter C op gele achtergrond duidt plaats van meldingen; daar kan ook landingstaks betaald worden (p. 36/83).", "difficulty": "medium", "tags": ["Signalen op de grond"], "refs": ["p.36/83"]}, {"id": "e96", "question": "Bij onderschepping moet je aan de intercepter tonen dat je de signalen begrijpt. Welke actie noemt de cursus als standaard bevestiging overdag in de lucht?", "options": ["Transponder 7700", "Met de vleugels schommelen (niet in finale)", "Landing lights aan/uit", "Flaps volledig uit"], "correctIndex": 1, "explanation": "De cursus: bevestiging door met de vleugels te schommelen overdag in de lucht (niet in finale) (p. 33/83, gekoppeld aan onderschepping/optische signalen).", "difficulty": "medium", "tags": ["Interceptie", "Communicatie"], "refs": ["p.33/83"]}, {"id": "e97", "question": "Je krijgt engine fire en moet noodsituatie melden via transponder. Welke code is correct?", "options": ["7700", "7600", "7500", "7000"], "correctIndex": 0, "explanation": "7700 = Emergency (p. 48/83).", "difficulty": "easy", "tags": ["Transponder"], "refs": ["p.48/83"]}, {"id": "e98", "question": "Wat is correct over het aantal mogelijke SSR-codes met 4 octale cijfers (0–7)?", "options": ["512", "1024", "4096", "7777"], "correctIndex": 2, "explanation": "Met 4 cijfers en elk 8 mogelijkheden: 8^4 = 4096 (p. 47/83).", "difficulty": "medium", "tags": ["Transponder"], "refs": ["p.47/83"]}, {"id": "e99", "question": "Je dient een vliegplan in. Wat is volgens de cursus de algemene minimum termijn vóór EOBT voor het indienen?", "options": ["10 min", "15 min", "30 min", "90 min"], "correctIndex": 2, "explanation": "Minstens 30 min voor EOBT (p. 48–49/83).", "difficulty": "easy", "tags": ["Vliegplan"], "refs": ["p.48-49/83"]}, {"id": "e100", "question": "Je vertrekt van een privaat veld en dient een vliegplan in. Wat is volgens de cursus jouw extra verantwoordelijkheid?", "options": ["Geen, ARO regelt alles", "Ervoor zorgen dat het vliegplan de betrokken ATS bereikt", "Alleen telefoonnummer doorgeven", "Zet automatisch 2000"], "correctIndex": 1, "explanation": "De cursus: gezagvoerder vanaf privaat veld is verantwoordelijk dat het vliegplan de ATS bereikt (p. 48/83).", "difficulty": "medium", "tags": ["Vliegplan"], "refs": ["p.48/83"]}, {"id": "e101", "question": "Je ziet in een transponderpaneel de stand 'SBY'. Wat betekent dit volgens de cursus?", "options": ["Het toestel zendt code en hoogte", "Het toestel staat aan maar zendt niets uit", "Het toestel is uitgeschakeld", "Het toestel zendt alleen code"], "correctIndex": 1, "explanation": "In de cursus: SBY = toestel staat aan maar zendt niets uit (p. 47/83).", "difficulty": "easy", "tags": ["Transponder", "Afkortingen"], "refs": ["p.47/83"]}, {"id": "e102", "question": "Je vult een vliegplan in en ziet dat tijden in UTC moeten. Wat is de juiste interpretatie uit de cursus?", "options": ["UTC is lokale tijd", "UTC = GMT (Co-ordinated Universal Time) en tijden worden in UTC vermeld", "UTC is alleen voor IFR", "UTC is Belgische wintertijd"], "correctIndex": 1, "explanation": "De cursus vermeldt dat het vliegplan in UTC wordt ingevuld en dat UTC = GMT (p. 50/83).", "difficulty": "easy", "tags": ["Vliegplan", "Afkortingen"], "refs": ["p.50/83"]}, {"id": "e103", "question": "Op een kaart of in AIP wordt afstand vaak in NM uitgedrukt. Wat betekent 1 NM?", "options": ["1,0 km", "1,852 km", "2,0 km", "1,609 km"], "correctIndex": 1, "explanation": "De cursus gebruikt nautische mijl (NM); 1 NM = 1,852 km (Eenheden, p. 56/83).", "difficulty": "medium", "tags": ["Eenheden"], "refs": ["p.56/83"]}, {"id": "e205", "question": "Je wil VFR vliegen in luchtruimklasse A. Wat is correct?", "options": ["Toegestaan met radio", "Verboden", "Toegestaan onder FL100", "Toegestaan met Special VFR"], "correctIndex": 1, "explanation": "VFR-vluchten in klasse A zijn verboden (p. 23/83).", "difficulty": "easy", "tags": ["Luchtruim", "Klasse A"], "refs": ["p.23/83"]}, {"id": "e206", "question": "Je vliegt VFR in klasse C onder FL250. Welke snelheidsbeperking noemt de cursus?", "options": ["140 kt IAS", "200 kt IAS", "250 kt IAS", "Geen beperking"], "correctIndex": 2, "explanation": "In klasse C: lager dan FL250 geldt 250 kt IAS (p. 21–22/83).", "difficulty": "medium", "tags": ["Luchtruim", "Klasse C"], "refs": ["p.21-22/83"]}, {"id": "e207", "question": "Je vliegt VFR in klasse C. Welke uitspraak past bij de verkeersdienstverlening volgens de cursus?", "options": ["ATC voorziet separatie tussen VFR onderling", "VFR wordt gescheiden van IFR; VFR krijgt traffic information om aanvaringen te voorkomen", "Geen radio nodig", "Alleen IFR is toegestaan"], "correctIndex": 1, "explanation": "In klasse C: scheiding VFR van IFR; voor VFR is traffic information voorzien; radioverbinding vereist (p. 21–22/83).", "difficulty": "hard", "tags": ["Luchtruim", "Klasse C"], "refs": ["p.21-22/83"]}, {"id": "e208", "question": "Je vliegt VFR in klasse D onder FL250. Welke snelheidsbeperking noemt de cursus?", "options": ["140 kt IAS", "200 kt IAS", "250 kt IAS", "Geen beperking"], "correctIndex": 2, "explanation": "In klasse D: lager dan FL250 geldt 250 kt IAS (p. 21–22/83).", "difficulty": "medium", "tags": ["Luchtruim", "Klasse D"], "refs": ["p.21-22/83"]}, {"id": "e209", "question": "Je vliegt VFR in klasse D. Welke uitspraak past bij de verkeersdienstverlening volgens de cursus?", "options": ["ATC voorziet separatie tussen VFR onderling", "VFR wordt gescheiden van IFR; VFR krijgt traffic information om aanvaringen te voorkomen", "Geen radio nodig", "Alleen IFR is toegestaan"], "correctIndex": 1, "explanation": "In klasse D: scheiding VFR van IFR; voor VFR is traffic information voorzien; radioverbinding vereist (p. 21–22/83).", "difficulty": "hard", "tags": ["Luchtruim", "Klasse D"], "refs": ["p.21-22/83"]}, {"id": "e210", "question": "Je vliegt VFR en komt in omstandigheden slechter dan de VMC-minima. Hoe heet dat en wat is de consequentie?", "options": ["VMC; je mag VFR verder", "IMC; vlucht mag enkel volgens IFR plaatsvinden", "SVFR; je mag blijven", "CTA; je moet landen"], "correctIndex": 1, "explanation": "IMC = weersomstandigheden slechter dan VMC; dan mag een vlucht alleen volgens IFR plaatsvinden (p. 23/83).", "difficulty": "medium", "tags": ["VMC/IMC"], "refs": ["p.23/83"]}, {"id": "e211", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e212", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e213", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e214", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je onder 500 ft blijft"], "correctIndex": 0, "explanation": "Zonder Special VFR: niet landen/opstijgen in CTR/circuit als meteo minder is dan grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e215", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e216", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e217", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e218", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je onder 500 ft blijft"], "correctIndex": 0, "explanation": "Zonder Special VFR: niet landen/opstijgen in CTR/circuit als meteo minder is dan grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e219", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e220", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e221", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 2, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e222", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e223", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e224", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e225", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je onder 500 ft blijft"], "correctIndex": 0, "explanation": "Zonder Special VFR: niet landen/opstijgen in CTR/circuit als meteo minder is dan grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e226", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 2, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e227", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e228", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e229", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 2, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e230", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e231", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e232", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e233", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e234", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e235", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je onder 500 ft blijft"], "correctIndex": 0, "explanation": "Zonder Special VFR: niet landen/opstijgen in CTR/circuit als meteo minder is dan grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e236", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e237", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e238", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e239", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e240", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e241", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e242", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e243", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e244", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e245", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 2, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e246", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e247", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 2, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e248", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 5 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e249", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 6 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je onder 500 ft blijft"], "correctIndex": 0, "explanation": "Zonder Special VFR: niet landen/opstijgen in CTR/circuit als meteo minder is dan grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e250", "question": "Je wil in een CTR opstijgen/landen zonder Special VFR. Grondzicht is 4 km en wolkenbasis 1800 ft. Wat is correct?", "options": ["Toegestaan: beide minima worden gehaald", "Niet toegestaan: zichtbaarheid is te laag", "Niet toegestaan: wolkenbasis is te laag", "Toegestaan als je transponder ALT gebruikt"], "correctIndex": 1, "explanation": "Zonder Special VFR gelden minima: grondzicht >5 km en wolkenbasis ≥1500 ft (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "CTR"], "refs": ["p.25/83"]}, {"id": "e251", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 5 km en wolkenbasis 2000 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e252", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 6 km en wolkenbasis 2000 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e253", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 6 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83). In dit scenario worden de minima niet gehaald (zicht 6 km, wolkenbasis 1200 ft), dus niet toegestaan.", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e254", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 5 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e255", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 5 km en wolkenbasis 2000 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e256", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 6 km en wolkenbasis 2000 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e257", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 4 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83). In dit scenario worden de minima niet gehaald (zicht 4 km, wolkenbasis 1200 ft), dus niet toegestaan.", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e258", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 5 km en wolkenbasis 2000 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e259", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 6 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83). In dit scenario worden de minima niet gehaald (zicht 6 km, wolkenbasis 1200 ft), dus niet toegestaan.", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e260", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 5 km en wolkenbasis 2000 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e261", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 6 km en wolkenbasis 2000 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e262", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 5 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83). In dit scenario worden de minima niet gehaald (zicht 5 km, wolkenbasis 1200 ft), dus niet toegestaan.", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e263", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 6 km en wolkenbasis 1200 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83). In dit scenario worden de minima niet gehaald (zicht 6 km, wolkenbasis 1200 ft), dus niet toegestaan.", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e264", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 6 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e265", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 4 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83). In dit scenario worden de minima niet gehaald (zicht 4 km, wolkenbasis 1500 ft), dus niet toegestaan.", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e266", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 6 km en wolkenbasis 2000 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e267", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 4 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83). In dit scenario worden de minima niet gehaald (zicht 4 km, wolkenbasis 1500 ft), dus niet toegestaan.", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e268", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 6 km en wolkenbasis 2000 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e269", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 4 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83). In dit scenario worden de minima niet gehaald (zicht 4 km, wolkenbasis 1500 ft), dus niet toegestaan.", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e270", "question": "Je plant een nacht-VFR vlucht waarbij je je verwijdert van de luchthaven. Zicht is 5 km en wolkenbasis 1500 ft. Wat is correct?", "options": ["Toegestaan zonder vliegplan", "Toegestaan, maar enkel met vliegplan én radioverbinding met ATS; minima moeten gehaald worden", "Toegestaan als je in klasse G blijft", "Niet toegestaan omdat nacht-VFR nooit kan"], "correctIndex": 1, "explanation": "Nacht-VFR bij verwijderen: vliegplan vereist, radioverbinding met ATS, zicht 5 km zonder uitzondering en wolkenbasis 1500 ft; minimumhoogte 1000 ft boven hoogste obstakel binnen 8 km (p. 25/83).", "difficulty": "hard", "tags": ["VFR", "Nacht"], "refs": ["p.25/83"]}, {"id": "e271", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 20°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 0, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e272", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 330°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e273", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 45°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 0, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e274", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 200°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e275", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 250°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e276", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 200°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e277", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 330°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e278", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 330°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e279", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 200°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e280", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 170°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 0, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e281", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 170°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 0, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e282", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 20°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 0, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e283", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 330°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e284", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 90°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 0, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e285", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 90°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 0, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e286", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 200°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e287", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 250°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e288", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 250°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e289", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 250°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e290", "question": "Je vliegt VFR in niet-gecontroleerd luchtruim boven 3000 ft AGL op magnetische route 250°. Welke kruisniveau-logica is correct?", "options": ["Onpaar duizendtal + 500 ft (VFR)", "Paar duizendtal + 500 ft (VFR)", "Veelvoud van 1000 ft (IFR)", "Vrij gekozen zonder systeem"], "correctIndex": 1, "explanation": "Semi-circular system: 000°–179° => VFR onpaar duizendtal + 500 ft; 180°–359° => VFR paar duizendtal + 500 ft (p. 26/83).", "difficulty": "hard", "tags": ["VFR", "Kruisniveau"], "refs": ["p.26/83"]}, {"id": "e291", "question": "Je bent in de lucht en ontvangt een Aldis-lamp signaal: reeks groene schitterlichten. Wat betekent dit?", "options": ["keer terug om te landen", "landen toegestaan", "luchtvaartterrein onveilig, land niet", "wijk uit voor ander verkeer en blijf cirkelen", "land op dit terrein"], "correctIndex": 0, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig in de lucht (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e292", "question": "Je bent in de lucht en ontvangt een Aldis-lamp signaal: blijvend groen licht. Wat betekent dit?", "options": ["keer terug om te landen", "landen toegestaan", "luchtvaartterrein onveilig, land niet", "wijk uit voor ander verkeer en blijf cirkelen", "land op dit terrein"], "correctIndex": 1, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig in de lucht (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e293", "question": "Je bent in de lucht en ontvangt een Aldis-lamp signaal: reeks rode schitterlichten. Wat betekent dit?", "options": ["keer terug om te landen", "landen toegestaan", "luchtvaartterrein onveilig, land niet", "wijk uit voor ander verkeer en blijf cirkelen", "land op dit terrein"], "correctIndex": 2, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig in de lucht (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e294", "question": "Je bent in de lucht en ontvangt een Aldis-lamp signaal: blijvend rood licht. Wat betekent dit?", "options": ["keer terug om te landen", "landen toegestaan", "luchtvaartterrein onveilig, land niet", "wijk uit voor ander verkeer en blijf cirkelen", "land op dit terrein"], "correctIndex": 3, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig in de lucht (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e295", "question": "Je bent in de lucht en ontvangt een Aldis-lamp signaal: reeks witte schitterlichten. Wat betekent dit?", "options": ["keer terug om te landen", "landen toegestaan", "luchtvaartterrein onveilig, land niet", "wijk uit voor ander verkeer en blijf cirkelen", "land op dit terrein"], "correctIndex": 4, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig in de lucht (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e296", "question": "Je staat op de grond en ontvangt een Aldis-lamp signaal: reeks groene schitterlichten. Wat betekent dit?", "options": ["taxiën toegestaan", "opstijgen toegestaan", "maak het in gebruik zijnde X landingsgedeelte vrij", "stop", "keer terug naar het vertrekpunt"], "correctIndex": 0, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig op de grond (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e297", "question": "Je staat op de grond en ontvangt een Aldis-lamp signaal: blijvend groen licht. Wat betekent dit?", "options": ["taxiën toegestaan", "opstijgen toegestaan", "maak het in gebruik zijnde X landingsgedeelte vrij", "stop", "keer terug naar het vertrekpunt"], "correctIndex": 1, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig op de grond (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e298", "question": "Je staat op de grond en ontvangt een Aldis-lamp signaal: reeks rode schitterlichten. Wat betekent dit?", "options": ["taxiën toegestaan", "opstijgen toegestaan", "maak het in gebruik zijnde X landingsgedeelte vrij", "stop", "keer terug naar het vertrekpunt"], "correctIndex": 2, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig op de grond (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e299", "question": "Je staat op de grond en ontvangt een Aldis-lamp signaal: blijvend rood licht. Wat betekent dit?", "options": ["taxiën toegestaan", "opstijgen toegestaan", "maak het in gebruik zijnde X landingsgedeelte vrij", "stop", "keer terug naar het vertrekpunt"], "correctIndex": 3, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig op de grond (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e300", "question": "Je staat op de grond en ontvangt een Aldis-lamp signaal: reeks witte schitterlichten. Wat betekent dit?", "options": ["taxiën toegestaan", "opstijgen toegestaan", "maak het in gebruik zijnde X landingsgedeelte vrij", "stop", "keer terug naar het vertrekpunt"], "correctIndex": 4, "explanation": "Zie tabel optische seinen (Aldis-lamp): betekenis per signaal voor vliegtuig op de grond (p. 33/83).", "difficulty": "medium", "tags": ["Lichtsignalen"], "refs": ["p.33/83"]}, {"id": "e301", "question": "Je wil een vliegplan 7 dagen op voorhand indienen. Wat is correct?", "options": ["Toegestaan", "Niet toegestaan: niet vroeger dan 5 dagen vooraf", "Alleen voor VFR toegestaan", "Alleen voor IFR toegestaan"], "correctIndex": 1, "explanation": "De cursus vermeldt dat een vliegplan niet vroeger dan 5 dagen vooraf mag worden ingediend (p. 49/83).", "difficulty": "medium", "tags": ["Vliegplan"], "refs": ["p.49/83"]}, {"id": "e302", "question": "Je vertrekt 10 minuten later dan EOBT voor een gecontroleerde vlucht. Wat is correct?", "options": ["Vliegplan blijft geldig", "Vliegplan wordt automatisch geannuleerd", "Vliegplan ongeldig vanaf 5 min", "Je moet verplicht opnieuw indienen"], "correctIndex": 0, "explanation": "Voor gecontroleerde vlucht wordt het vliegplan ongeldig bij overschrijding van EOBT met 15 minuten (p. 48–49/83).", "difficulty": "medium", "tags": ["Vliegplan"], "refs": ["p.48-49/83"]}, {"id": "e303", "question": "Je vliegt IFR in gecontroleerd luchtruim en hebt nog geen discrete code gekregen. Welke standaardcode gebruik je?", "options": ["7000", "2000", "5101", "0047"], "correctIndex": 1, "explanation": "2000 = IFR standaard wanneer geen andere code is toegewezen (Transponder codes, p. 48/83).", "difficulty": "easy", "tags": ["Transponder"], "refs": ["p.48/83"]}, {"id": "e304", "question": "Je vliegt VFR en wordt door Brussels Info gevraagd een code uit hun VFR-reeks te gebruiken. Welk bereik hoort hierbij?", "options": ["0041–0057", "5101–5110", "7000–7099", "2000–2007"], "correctIndex": 0, "explanation": "De cursus: 0041–0057 zijn VFR-codes van Brussels Info (p. 48/83).", "difficulty": "easy", "tags": ["Transponder"], "refs": ["p.48/83"]}, {"id": "e305", "question": "Je wil buiten openingsuren een militair luchtvaartterrein overvliegen binnen 2 NM op 2400 ft AMSL. Wat is correct?", "options": ["Toegestaan als je in klasse G bent", "Niet toegestaan tenzij met toelating van het Ministerie van Landsverdediging", "Toegestaan als je transponder 7000 gebruikt", "Toegestaan als zichtbaarheid > 8 km"], "correctIndex": 1, "explanation": "Buiten openingsuren: niet overvliegen binnen 2 NM tot 2500 ft AMSL, tenzij mits toelating (p. 22/83).", "difficulty": "hard", "tags": ["Luchtruim", "Militair"], "refs": ["p.22/83"]}, {"id": "e306", "question": "Je maakt een overmachtlanding buiten een luchtvaartterrein. Welke melding is nodig om onnodige reddingsactie te vermijden?", "options": ["Geen melding nodig", "Zo snel mogelijk luchtverkeerregeling verwittigen", "Alleen je instructeur bellen", "Enkel de verzekering bellen"], "correctIndex": 1, "explanation": "Bij overmachtlanding: ten spoedigste de dienst voor regeling van luchtverkeer verwittigen (p. 10/83).", "difficulty": "medium", "tags": ["Noodprocedures"], "refs": ["p.10/83"]}, {"id": "e307", "question": "Je zoekt in de AIP naar 'Landingstaksen'. In welk deel van de AIP verwacht je vooral info over procedures/gegevens per luchthaven (incl. taksen)?", "options": ["GEN", "ENR", "AD (Aerodromes)", "NOTAM"], "correctIndex": 2, "explanation": "Per belangrijke luchthaven geeft de AIP (AD) een volledige beschrijving, inclusief diverse gegevens zoals procedures en taksen (p. 5/83).", "difficulty": "medium", "tags": ["AIP", "Landingstaksen", "AD"], "refs": ["p.5/83"]}, {"id": "e308", "question": "Je wil weten welke grond-lucht visuele signalen voor Search and Rescue (SAR) gebruikt worden. Waar wordt dit in de cursus ondergebracht?", "options": ["Bij AIP GEN-informatie", "Bij de hoofdstukken over licht/grond-signalen en SAR-informatie in GEN", "Alleen in METAR/TAF", "Alleen in transponderhoofdstuk"], "correctIndex": 1, "explanation": "De cursus noemt SAR en grond-lucht visuele signalen als onderdeel van de algemene informatie (AIP/GEN) en signalisatie (p. 5/83).", "difficulty": "medium", "tags": ["SAR", "Search and Rescue", "grond-lucht"], "refs": ["p.5/83"]}, {"id": "e309", "question": "In AIP-informatie over een belangrijke luchthaven: welke soort gegevens horen daar typisch bij?", "options": ["Alleen de naam van het vliegveld en niets anders", "O.a. naam van het vliegveld, codeletter, baan in gebruik (landing/opstijgen), circuitinformatie en procedures", "Alleen de kleur van de baan", "Alleen transpondercodes"], "correctIndex": 1, "explanation": "De cursus geeft aan dat per belangrijke luchthaven een volledige beschrijving met voornaamste gegevens voorzien is (p. 5/83).", "difficulty": "medium", "tags": ["AIP", "belangrijke luchthaven", "voornaamste gegevens", "code letter"], "refs": ["p.5/83"]}, {"id": "e310", "question": "Je ziet SR en SS in operationele context. Waar slaan SR en SS op?", "options": ["Standard Rate en Standard Speed", "Sunrise en Sunset (zonsopgang en zonsondergang)", "Squawk Ready en Squawk Standby", "Sector Radio en Sector Service"], "correctIndex": 1, "explanation": "De cursus: SR en SS verwijzen naar zonsopgang en zonsondergang (p. 5/83).", "difficulty": "medium", "tags": ["SR", "SS", "zonsopgang", "zonsondergang"], "refs": ["p.5/83"]}, {"id": "e311", "question": "Welke korte omschrijving past het best bij 'communication procedures' in deze cursuscontext?", "options": ["Alleen SMS-berichten naar ARO", "Radiocommunicatie/ATS-procedures zoals gebruikt in luchtruim en rond velden", "Enkel transpondercodes", "Alleen noodsignalen met vlaggen"], "correctIndex": 1, "explanation": "De cursus verwijst naar communicaties procedures als onderdeel van de basisreglementering en operationele procedures (p. 5/83, p. 25/83, p. 48–50/83).", "difficulty": "medium", "tags": ["communicaties procedures", "ATS", "radio"], "refs": ["p.5/83", "p.25/83", "p.48-50/83"]}, {"id": "e312", "question": "Op een kaart zie je P-, R- en D-gebieden. Wat is het correcte type aanduiding voor België in de cursus?", "options": ["EB + (P/R/D) + cijfers", "BE + (P/R/D) + cijfers", "EU + (P/R/D) + cijfers", "Alleen cijfers"], "correctIndex": 0, "explanation": "Speciale gebieden: 3-lettercode met E (Europa), B (België), derde letter P/R/D en daarna cijfers (p. 19/83).", "difficulty": "medium", "tags": ["P R D gebieden", "gebieden", "EBP", "EBR", "EBD"], "refs": ["p.19/83"]}, {"id": "e350", "question": "Voor een DPM-klassebevoegdverklaring: welke combinatie eisen hoort samen?", "options": ["10 uur solovliegtijd onder toezicht, 5 uur overland (min 3 uur solo overland), en 15 starts/naderingen/landingen tot volledige stilstand onder toezicht", "5 uur solovliegtijd zonder toezicht, 10 uur overland, en 5 starts/landingen", "Alleen een theoretisch examen, geen vlieguren vereist", "25 uur instructie met autogiro’s"], "correctIndex": 0, "explanation": "KB art. 51 somt de eisen voor DPM-klassebevoegdverklaring op: 10u solo onder toezicht; 5u overland incl min 3u solo overland; 15 starts/naderingen/landingen tot stilstand onder toezicht (KB art. 51).", "difficulty": "hard", "tags": ["KB 20-12-2024"], "refs": ["KB art. 51"]}]};
+
+    // Zet MASTER_THRESHOLD eventueel volgens de set
+    // (MASTER_THRESHOLD staat bovenaan als const, dus we gebruiken aparte variabele)
+    const EMBEDDED_MASTER_THRESHOLD =
+      (EMBEDDED_QUESTION_SET && typeof EMBEDDED_QUESTION_SET.masterThreshold === "number")
+        ? EMBEDDED_QUESTION_SET.masterThreshold
+        : MASTER_THRESHOLD;
+
+    function loadEmbeddedQuestions(){
+      if(!EMBEDDED_QUESTION_SET?.questions?.length) return false;
+
+      items = EMBEDDED_QUESTION_SET.questions.map((q, idx) => {
+        const id = q.id || `emb_${idx}`;
+        const options = Array.isArray(q.options) ? q.options : [];
+        const ci = typeof q.correctIndex === "number" ? q.correctIndex : -1;
+        const correctAnswer = (ci >= 0 && ci < options.length) ? options[ci] : (options[0] || "");
+        return {
+          id,
+          source: q.source || "",
+          question: q.question || "",
+          options,
+          correctAnswer,
+          explanation: q.explanation || "",
+          mastered: 0,
+          wrongCount: 0
+        };
+      }).filter(it => it.question && it.options.length >= 2);
+
+      queue = items.map(it => it.id);
+      totalWrong = 0;
+
+      externalQuestionsLoaded = true;
+      externalQuestionSetTitle = EMBEDDED_QUESTION_SET.title || "";
+      return true;
+    }
+
+    // Laad ingebouwde set meteen zodat je direct kan starten
+    loadEmbeddedQuestions();
+
+    // -------------------------
+    //   AFKORTINGEN / BETEKENIS (klein venster onder de vraag)
+    // -------------------------
+    const acronymBoxEl = document.getElementById("acronymBox");
+
+    // Basis woordenlijst (NL) – uitbreidbaar
+    const ACRONYM_GLOSSARY = {
+      "ULM":"Ultra Light Motorized (ultralicht motorvliegtuig)",
+      "VFR":"Visual Flight Rules (vliegen op zicht)",
+      "IFR":"Instrument Flight Rules (instrumentvliegen)",
+      "VMC":"Visual Meteorological Conditions (VFR-weer minimumcondities)",
+      "IMC":"Instrument Meteorological Conditions (weer slechter dan VMC)",
+      "CTR":"Control Zone (gecontroleerde zone rond een luchthaven)",
+      "TMA":"Terminal Control Area (aansluitende gecontroleerde area)",
+      "ATC":"Air Traffic Control (luchtverkeersleiding)",
+      "ATS":"Air Traffic Services (luchtverkeersdiensten)",
+      "ACC":"Area Control Centre (gebiedscontrolecentrum)",
+      "ARO":"Air Traffic Services Reporting Office (vliegplankantoor/ARO)",
+      "SAR":"Search and Rescue (opsporing & redding)",
+      "AWY":"Airway (luchtweg)",
+      "LCTA":"Lower Control Area (gecontroleerd gebied op lagere hoogte)",
+      "TSA":"Temporary Segregated Area (tijdelijk gescheiden gebied)",
+      "NOTAM":"Notice to Airmen / Air Missions (bericht met tijdelijke operationele info)",
+      "AIP":"Aeronautical Information Publication (luchtvaart-informatiepublicatie)",
+      "GEN":"General (GEN-sectie van de AIP)",
+      "ATIS":"Automatic Terminal Information Service (automatische luchthaveninfo)",
+      "IAS":"Indicated Airspeed (aangegeven luchtsnelheid)",
+      "TCAS":"Traffic Collision Avoidance System (botswaarschuwingssysteem)",
+      "DGL":"Directoraat-Generaal Luchtvaart",
+      "DG":"Directeur-Generaal (in context: luchtvaartadministratie)",
+      "KMI":"Koninklijk Meteorologisch Instituut",
+      "SR":"Sunrise (zonsopgang)",
+      "SS":"Sunset (zonsondergang)",
+      "MSL":"Mean Sea Level (gemiddeld zeeniveau)",
+      "AMSL":"Above Mean Sea Level (hoogte boven MSL)",
+      "AGL":"Above Ground Level (hoogte boven terrein)",
+      "QNH":"Luchtdrukinstelling die hoogte boven MSL geeft",
+      "QFE":"Luchtdrukinstelling die hoogte boven het veld/startbaan geeft",
+      "SBY":"Standby (transponder standby)",
+      "IDENT":"Identificatieknop op de transponder",
+      "MODE":"Transponder-modus (Mode A/C/S)",
+      "RWY":"Runway (start- en landingsbaan)",
+      "FIR":"Flight Information Region (vluchtinformatiegebied)",
+      "EOBT":"Estimated Off-Block Time (geplande bloktijd vertrek)",
+      "NM":"Nautical Mile (zeemijl)",
+      "FT":"Foot (voet)",
+      "KT":"Knot (zeemijl per uur)",
+      "HPA":"Hectopascal (druk-eenheid)",
+      "FL":"Flight Level (vliegniveau t.o.v. standaarddruk 1013.2 hPa)",
+      "SCHENGEN":"Schengengebied (vrij verkeer, grensformaliteiten)",
+      "VHF":"Very High Frequency (radiofrequentieband)"
+    };
+
+    function extractAcronyms(text){
+      const found = new Set();
+      const t = (text || "");
+
+      // 1) Patronen met slash (SR/SS, CTR/TMA, ...)
+      const slash = t.match(/\b[A-Z]{2,}\/[A-Z]{2,}\b/g) || [];
+      slash.forEach(s => s.split("/").forEach(x => found.add(x)));
+
+      // 2) Zuivere hoofdletter-afkortingen (VFR, ATC, ...)
+      (t.match(/\b[A-Z]{2,}\b/g) || []).forEach(x => found.add(x));
+
+      // 3) Flight levels (FL195 => FL)
+      if(/\bFL\d+\b/.test(t)) found.add("FL");
+
+      // 4) Eenheden (ft, kt, hPa) – in de vragen vaak klein geschreven
+      if(/\bft\b/i.test(t)) found.add("FT");
+      if(/\bkt\b/i.test(t)) found.add("KT");
+      if(/\bhpa\b/i.test(t)) found.add("HPA");
+      if(/\bNM\b/i.test(t)) found.add("NM");
+
+      // 5) QNH/QFE (soms met leestekens)
+      if(/\bQNH\b/i.test(t)) found.add("QNH");
+      if(/\bQFE\b/i.test(t)) found.add("QFE");
+
+      // 6) AGL/AMSL/MSL (case-insensitive)
+      if(/\bAGL\b/i.test(t)) found.add("AGL");
+      if(/\bAMSL\b/i.test(t)) found.add("AMSL");
+      if(/\bMSL\b/i.test(t)) found.add("MSL");
+
+      return Array.from(found);
+    }
+
+    function renderAcronymsForQuestion(questionText){
+      if(!acronymBoxEl) return;
+      const acrs = extractAcronyms(questionText);
+
+      if(!acrs.length){
+        acronymBoxEl.classList.add("hidden");
+        acronymBoxEl.innerHTML = "";
+        return;
+      }
+
+      // Sort: gekend eerst, dan alfabetisch
+      acrs.sort((a,b) => {
+        const ak = ACRONYM_GLOSSARY[a] ? 0 : 1;
+        const bk = ACRONYM_GLOSSARY[b] ? 0 : 1;
+        if(ak !== bk) return ak - bk;
+        return a.localeCompare(b);
+      });
+
+      const lines = acrs.map(a => {
+        const meaning = ACRONYM_GLOSSARY[a] || "Betekenis niet in woordenlijst (breid ACRONYM_GLOSSARY uit)";
+        return `<div><b>${a}</b>: ${escapeHtml(meaning)}</div>`;
+      });
+
+      acronymBoxEl.innerHTML = `<div style="font-weight:bold; margin-bottom:6px;">Afkortingen in deze vraag</div>` + lines.join("");
+      acronymBoxEl.classList.remove("hidden");
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+    }
+
+
+    // -------------------------
+    //   UI ELEMENTS
+    // -------------------------
+    const setupSection = document.getElementById("setupSection");
+    const quizSection = document.getElementById("quizSection");
+    const resultsSection = document.getElementById("resultsSection");
+
+    const tabPdfBtn = document.getElementById("tabPdfBtn");
+    const tabTextBtn = document.getElementById("tabTextBtn");
+    const pdfTab = document.getElementById("pdfTab");
+    const textTab = document.getElementById("textTab");
+
+    const fileUploadArea = document.getElementById("fileUploadArea");
+    const fileInput = document.getElementById("fileInput");
+    const fileNameEl = document.getElementById("fileName");
+
+    // Vragenbestand upload UI
+    const questionUploadArea = document.getElementById("questionUploadArea");
+    const questionFileInput = document.getElementById("questionFileInput");
+    const questionFileNameEl = document.getElementById("questionFileName");
+
+    const loadingIndicator = document.getElementById("loadingIndicator");
+    const startBtn = document.getElementById("startBtn");
+
+    const questionTextEl = document.getElementById("questionText");
+    const optionsContainer = document.getElementById("optionsContainer");
+    const feedbackEl = document.getElementById("feedback");
+    const feedbackTitleEl = document.getElementById("feedbackTitle");
+    const explanationEl = document.getElementById("explanation");
+    const checkButton = document.getElementById("checkButton");
+    const continueButton = document.getElementById("continueButton");
+
+    const statRemaining = document.getElementById("statRemaining");
+    const statMastered = document.getElementById("statMastered");
+    const statWrong = document.getElementById("statWrong");
+    const progressFill = document.getElementById("progressFill");
+
+    const finalScoreEl = document.getElementById("finalScore");
+    const finalMasteredEl = document.getElementById("finalMastered");
+    const finalTotalEl = document.getElementById("finalTotal");
+    const restartBtn = document.getElementById("restartBtn");
+
+    let currentTab = "pdf";
+
+    // -------------------------
+    //   TAB SWITCH
+    // -------------------------
+    function setTab(tab){
+      currentTab = tab;
+      tabPdfBtn.classList.toggle("active", tab === "pdf");
+      tabTextBtn.classList.toggle("active", tab === "text");
+      pdfTab.classList.toggle("active", tab === "pdf");
+      textTab.classList.toggle("active", tab === "text");
+    }
+    tabPdfBtn.addEventListener("click", () => setTab("pdf"));
+    tabTextBtn.addEventListener("click", () => setTab("text"));
+
+    // -------------------------
+    //   FILE UPLOAD (drag/drop + click)
+    // -------------------------
+    fileUploadArea.addEventListener("click", () => fileInput.click());
+
+    fileUploadArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      fileUploadArea.classList.add("dragover");
+    });
+    fileUploadArea.addEventListener("dragleave", () => {
+      fileUploadArea.classList.remove("dragover");
+    });
+    fileUploadArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      fileUploadArea.classList.remove("dragover");
+      const f = e.dataTransfer.files?.[0];
+      if(!f) return;
+      if(f.type !== "application/pdf"){
+        alert("Upload alstublieft een geldig PDF-bestand.");
+        return;
+      }
+      handleFile(f);
+    });
+
+    fileInput.addEventListener("change", (e) => {
+      const f = e.target.files?.[0];
+      if(f) handleFile(f);
+    });
+
+    async function handleFile(file){
+      fileNameEl.textContent = `📄 ${file.name}`;
+      fileNameEl.classList.remove("hidden");
+      loadingIndicator.classList.remove("hidden");
+      startBtn.disabled = true;
+
+      try{
+        const text = await extractTextFromPDF(file);
+        courseContent = normalizeText(text);
+
+        loadingIndicator.classList.add("hidden");
+        startBtn.disabled = false;
+
+        if(courseContent.length < 100){
+          alert("De PDF lijkt weinig selecteerbare tekst te bevatten (mogelijk een scan). Gebruik de Tekst Invoer-tab of exporteer de PDF met OCR/tekstherkenning.");
+        }
+      }catch(err){
+        console.error(err);
+        loadingIndicator.classList.add("hidden");
+        startBtn.disabled = false;
+        alert("Fout bij het verwerken van de PDF. Probeer Tekst Invoer.");
+      }
+    }
+
+    async function extractTextFromPDF(file){
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      let full = "";
+      for(let i=1; i<=pdf.numPages; i++){
+        const page = await pdf.getPage(i);
+        const tc = await page.getTextContent();
+        const pageText = tc.items.map(it => it.str).join(" ");
+        full += pageText + "\n";
+      }
+      return full;
+    }
+
+
+    // -------------------------
+    //   VRAGENBESTAND UPLOAD (JSON/TXT)
+    // -------------------------
+    if (questionUploadArea && questionFileInput) {
+      questionUploadArea.addEventListener("click", () => questionFileInput.click());
+
+      questionUploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        questionUploadArea.classList.add("dragover");
+      });
+      questionUploadArea.addEventListener("dragleave", () => {
+        questionUploadArea.classList.remove("dragover");
+      });
+      questionUploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        questionUploadArea.classList.remove("dragover");
+        const f = e.dataTransfer.files?.[0];
+        if(!f) return;
+        handleQuestionFile(f);
+      });
+
+      questionFileInput.addEventListener("change", (e) => {
+        const f = e.target.files?.[0];
+        if(f) handleQuestionFile(f);
+      });
+    }
+
+    async function handleQuestionFile(file){
+      const name = (file.name || "").toLowerCase();
+      if(!(name.endsWith(".json") || name.endsWith(".txt"))){
+        alert("Upload een .json of .txt bestand met vragen.");
+        return;
+      }
+
+      questionFileNameEl.textContent = `🧩 ${file.name}`;
+      questionFileNameEl.classList.remove("hidden");
+
+      const text = await file.text();
+
+      try{
+        const parsed = name.endsWith(".json")
+          ? parseQuestionsJSON(text)
+          : parseQuestionsTXT(text);
+
+        items = parsed.items;
+        queue = items.map(it => it.id);
+        totalWrong = 0;
+
+        externalQuestionsLoaded = true;
+        externalQuestionSetTitle = parsed.title || "";
+
+        alert(`Vragen geladen: ${items.length}. Klik nu op “Start Met Leren”.`);
+      }catch(err){
+        console.error(err);
+        alert("Kon vragenbestand niet lezen. Controleer het formaat (JSON/TXT) en of elke vraag opties + correct antwoord + uitleg heeft.");
+      }
+    }
+
+    function parseQuestionsJSON(text){
+      const obj = JSON.parse(text);
+
+      if(!obj.questions || !Array.isArray(obj.questions) || obj.questions.length === 0){
+        throw new Error("Geen questions[] gevonden in JSON");
+      }
+
+      const parsedItems = obj.questions.map((q, idx) => {
+        if(!q.question || typeof q.question !== "string") throw new Error("question ontbreekt");
+        if(!Array.isArray(q.options) || q.options.length < 2) throw new Error("options[] ontbreekt of te kort");
+        if(typeof q.correctIndex !== "number") throw new Error("correctIndex ontbreekt");
+        if(q.correctIndex < 0 || q.correctIndex >= q.options.length) throw new Error("correctIndex buiten bereik");
+        if(!q.explanation || typeof q.explanation !== "string") throw new Error("explanation ontbreekt");
+
+        const id = q.id || `ext_${idx}`;
+        const correctAnswer = q.options[q.correctIndex];
+
+        return {
+          id,
+          source: q.source || "",
+          question: q.question,
+          options: q.options,
+          correctAnswer,
+          explanation: q.explanation,
+          mastered: 0,
+          wrongCount: 0
+        };
+      });
+
+      return { title: obj.title || "", items: parsedItems };
+    }
+
+    function parseQuestionsTXT(text){
+      const blocks = text.split(/\n\s*\n/g).map(b => b.trim()).filter(Boolean);
+      if(blocks.length === 0) throw new Error("Geen vragenblokken gevonden in TXT");
+
+      const parsedItems = blocks.map((block, idx) => {
+        const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+
+        const qLine = lines.find(l => /^Q:\s*/i.test(l));
+        const ansLine = lines.find(l => /^ANS:\s*/i.test(l));
+        const expLine = lines.find(l => /^EXP:\s*/i.test(l));
+
+        if(!qLine || !ansLine || !expLine) throw new Error("In een TXT-blok ontbreekt Q:, ANS: of EXP:");
+
+        const question = qLine.replace(/^Q:\s*/i, "").trim();
+
+        const optionLines = lines.filter(l => /^[A-D]\)\s*/i.test(l));
+        if(optionLines.length < 2) throw new Error("Minstens 2 opties (A)- (B)...) nodig");
+
+        const options = optionLines.map(l => l.replace(/^[A-D]\)\s*/i, "").trim());
+
+        const ansLetter = ansLine.replace(/^ANS:\s*/i, "").trim().toUpperCase();
+        const map = { A:0, B:1, C:2, D:3 };
+        if(map[ansLetter] === undefined) throw new Error("ANS moet A, B, C of D zijn");
+        if(map[ansLetter] >= options.length) throw new Error("ANS verwijst naar een optie die niet bestaat");
+
+        const explanation = expLine.replace(/^EXP:\s*/i, "").trim();
+
+        return {
+          id: `ext_${idx}`,
+          source: "",
+          question,
+          options,
+          correctAnswer: options[map[ansLetter]],
+          explanation,
+          mastered: 0,
+          wrongCount: 0
+        };
+      });
+
+      return { title: "", items: parsedItems };
+    }
+
+    // -------------------------
+    //   START QUIZ
+    // -------------------------
+    startBtn.addEventListener("click", () => startQuiz());
+
+    function startQuiz(){
+      // 1) Als je een vragenbestand (JSON/TXT) hebt geüpload: gebruik die vragen 1-op-1
+      if(externalQuestionsLoaded && items.length > 0){
+        setupSection.classList.add("hidden");
+        resultsSection.classList.add("hidden");
+        quizSection.classList.remove("hidden");
+
+        showNextFromQueue();
+        updateStats();
+        return;
+      }
+
+      // 2) Anders: huidige flow (PDF of tekst) blijft werken
+      if(currentTab === "text"){
+        courseContent = normalizeText(document.getElementById("courseContent").value || "");
+      }
+
+      if(!courseContent || courseContent.length < 50){
+        alert("Voeg alstublieft cursusmateriaal toe (optioneel), of start met de ingebouwde examenvragen.");
+        return;
+      }
+
+      // 1) Maak “bron-fragmenten” (elke regel/bullet/zin = één item)
+      const sources = splitIntoCoverageFragments(courseContent);
+
+      if(sources.length === 0){
+        alert("Kon geen bruikbare tekstfragmenten vinden. Voeg meer inhoud toe.");
+        return;
+      }
+
+      // 2) Genereer voor ELK fragment minimaal één MC-vraag (dekking)
+      items = sources.map((src, idx) => makeQuestionItem(src, idx)).filter(Boolean);
+
+      if(items.length === 0){
+        alert("Kon geen vragen genereren. Probeer meer tekst of andere inhoud.");
+        return;
+      }
+
+      // 3) Zet queue = alle ids
+      queue = items.map(it => it.id);
+      totalWrong = 0;
+
+      setupSection.classList.add("hidden");
+      resultsSection.classList.add("hidden");
+      quizSection.classList.remove("hidden");
+
+      showNextFromQueue();
+      updateStats();
+    }
+
+    // -------------------------
+    //   COVERAGE SPLIT (belangrijk voor “niets missen”)
+    // -------------------------
+    function normalizeText(t){
+      return (t || "")
+        .replace(/\u00A0/g, " ")
+        .replace(/[ \t]+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+    }
+
+    // Splits in fragmenten: lege regels eruit, maar korte regels (bv. “NOTAM”) behouden.
+    // We behandelen zowel paragrafen als bullets/regels.
+    function splitIntoCoverageFragments(text){
+      // 1) Eerst opsplitsen op nieuwe regels
+      const lines = text
+        .split("\n")
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
+
+      // 2) Combineer zeer korte “kopjes” met volgende regel zodat er context is
+      const fragments = [];
+      for(let i=0; i<lines.length; i++){
+        const l = lines[i];
+
+        const looksLikeHeading = (
+          l.length <= 40 &&
+          /[:.]?$/.test(l) &&
+          (l.toUpperCase() === l || /^[0-9]+[).]/.test(l))
+        );
+
+        if(looksLikeHeading && i+1 < lines.length){
+          const combined = l + " — " + lines[i+1];
+          fragments.push(combined);
+          i++; // skip next
+        } else {
+          fragments.push(l);
+        }
+      }
+
+      // 3) Extra: splits lange fragmenten in zinnen om beter te bevragen
+      const out = [];
+      for(const f of fragments){
+        if(f.length > 220){
+          const sentences = f.split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(Boolean);
+          if(sentences.length > 1){
+            sentences.forEach(s => out.push(s));
+          } else {
+            out.push(f);
+          }
+        } else {
+          out.push(f);
+        }
+      }
+
+      // 4) Uniek + niet-te-kort
+      return out
+        .map(s => s.replace(/\s+/g, " ").trim())
+        .filter(s => s.length >= 10);
+    }
+
+    // -------------------------
+    //   QUESTION GENERATION (MC, NL, met uitleg uit bron)
+    // -------------------------
+    function makeQuestionItem(sourceText, index){
+      // Probeer een sleutelterm te vinden om weg te laten (cloze).
+      const tokens = tokenize(sourceText);
+      const key = pickKeyToken(tokens);
+
+      // Als we geen goede key vinden: maak “Wat is de juiste uitspraak?” vraag.
+      if(!key){
+        const correct = sourceText;
+        const wrong1 = distortStatement(sourceText);
+        const wrong2 = distortStatement(sourceText);
+        const wrong3 = distortStatement(sourceText);
+
+        const options = uniqueOptions([correct, wrong1, wrong2, wrong3]).slice(0,4);
+        if(options.length < 3) return null;
+
+        shuffle(options);
+
+        return {
+          id: `it_${index}`,
+          source: sourceText,
+          question: "Welke uitspraak komt overeen met de cursusinhoud?",
+          options,
+          correctAnswer: correct,
+          explanation:
+            `Volgens de cursus staat letterlijk:\n\n“${sourceText}”\n\nDaarom is dit de juiste uitspraak.`,
+          mastered: 0,
+          wrongCount: 0
+        };
+      }
+
+      // Cloze vraag
+      const masked = maskFirst(sourceText, key);
+      const correct = key;
+
+      const wrongs = generateWrongAnswers(correct, tokens);
+      const options = uniqueOptions([correct, ...wrongs]).slice(0,4);
+      if(options.length < 3) return null;
+
+      shuffle(options);
+
+      return {
+        id: `it_${index}`,
+        source: sourceText,
+        question: `Welk woord/term maakt deze zin correct? \n\n“${masked}”`,
+        options,
+        correctAnswer: correct,
+        explanation:
+          `In de cursus staat:\n\n“${sourceText}”\n\nHet juiste antwoord is “${correct}”.`,
+        mastered: 0,
+        wrongCount: 0
+      };
+    }
+
+    function tokenize(text){
+      return text
+        .split(/\s+/)
+        .map(w => w.replace(/[“”"(),;:!?]/g, "").trim())
+        .filter(w => w.length > 0);
+    }
+
+    function pickKeyToken(tokens){
+      // Kies een “informative” token: niet te kort, niet puur getal, niet stopwoord.
+      const stop = new Set(["de","het","een","en","of","van","voor","door","met","op","in","aan","als","bij","is","zijn","wordt","werden","moet","mag","kan","kunnen","niet","wel","dit","dat","die","these","waar","wanneer","zoals","ook","meer","minder","om","te"]);
+      const candidates = tokens.filter(t => {
+        const low = t.toLowerCase();
+        if(stop.has(low)) return false;
+        if(t.length < 3) return false;
+        if(/^\d+$/.test(t)) return false;
+        // vermijd puur leestekens
+        if(!/[a-zA-ZÀ-ÿ]/.test(t)) return false;
+        return true;
+      });
+
+      if(candidates.length === 0) return null;
+
+      // Prefer “ALL CAPS” afkortingen of woorden met hoofdletter (termen)
+      const prefer = candidates.filter(t => /^[A-Z]{2,}$/.test(t) || /^[A-Z][a-zÀ-ÿ]/.test(t));
+      const pool = prefer.length ? prefer : candidates;
+
+      return pool[Math.floor(Math.random() * Math.min(pool.length, 6))];
+    }
+
+    function maskFirst(text, word){
+      const re = new RegExp(`\\b${escapeRegExp(word)}\\b`);
+      return text.replace(re, "______");
+    }
+
+    function escapeRegExp(s){
+      return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function generateWrongAnswers(correct, tokens){
+      const wrongs = [];
+
+      // 1) “Lijkt erop” variant
+      wrongs.push(similarWord(correct));
+
+      // 2) Een andere term uit dezelfde zin
+      const others = tokens
+        .map(t => t.replace(/[“”"(),;:!?]/g, ""))
+        .filter(t => t && t.toLowerCase() !== correct.toLowerCase() && t.length >= 3);
+
+      if(others.length){
+        wrongs.push(others[Math.floor(Math.random() * others.length)]);
+      }
+
+      // 3) Generieke luchtvaart/leer-termen (NL)
+      const generic = ["procedure", "regelgeving", "luchtruim", "vergunning", "luchtwaardigheid", "vliegplan", "notam", "afkorting", "zone", "rapportering"];
+      wrongs.push(generic[Math.floor(Math.random() * generic.length)]);
+
+      // 4) Nog één “verkeerde” variant
+      wrongs.push(similarWord(correct));
+
+      return uniqueOptions(wrongs).filter(w => w.toLowerCase() !== correct.toLowerCase());
+    }
+
+    function similarWord(word){
+      const prefixes = ["pre","post","anti","sub","super","ultra","semi","pseudo"];
+      const suffixes = ["-regeling","-procedure","-zone","-systeem","-bewijs","-certificaat","-plan"];
+      if(word.length >= 5 && Math.random() > 0.5){
+        return prefixes[Math.floor(Math.random()*prefixes.length)] + word.toLowerCase();
+      }
+      return word + suffixes[Math.floor(Math.random()*suffixes.length)];
+    }
+
+    function distortStatement(text){
+      // Kleine vervorming zodat het “plausibel fout” is
+      let t = text;
+      t = t.replace(/\bmoet\b/i, "mag");
+      t = t.replace(/\bmag\b/i, "moet");
+      t = t.replace(/\baltijd\b/i, "nooit");
+      t = t.replace(/\bnooit\b/i, "altijd");
+      t = t.replace(/\bminstens\b/i, "hoogstens");
+      t = t.replace(/\bhoogstens\b/i, "minstens");
+      return t === text ? (text + " (dit is onjuist)") : t;
+    }
+
+    function uniqueOptions(arr){
+      const out = [];
+      const seen = new Set();
+      for(const x of arr){
+        const v = (x || "").trim();
+        const k = v.toLowerCase();
+        if(!v) continue;
+        if(seen.has(k)) continue;
+        seen.add(k);
+        out.push(v);
+      }
+      return out;
+    }
+
+    function shuffle(a){
+      for(let i=a.length-1; i>0; i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+    }
+
+    // -------------------------
+    //   QUIZ FLOW
+    // -------------------------
+    function showNextFromQueue(){
+      if(queue.length === 0){
+        return showResults();
+      }
+
+      selectedOptionIndex = null;
+      feedbackEl.classList.remove("active","correct","incorrect");
+      checkButton.classList.remove("hidden");
+      continueButton.classList.add("hidden");
+
+      const itemId = queue[0];
+      const item = items.find(it => it.id === itemId);
+      if(!item){
+        queue.shift();
+        return showNextFromQueue();
+      }
+
+      renderItem(item);
+      updateStats();
+    }
+
+    function renderItem(item){
+      questionTextEl.textContent = item.question;
+      renderAcronymsForQuestion(item.question);
+
+      optionsContainer.innerHTML = "";
+      item.options.forEach((opt, idx) => {
+        const d = document.createElement("div");
+        d.className = "option";
+        d.textContent = opt;
+        d.addEventListener("click", () => selectOption(idx));
+        optionsContainer.appendChild(d);
+      });
+    }
+
+    function selectOption(idx){
+      if(checkButton.classList.contains("hidden")) return;
+      selectedOptionIndex = idx;
+      document.querySelectorAll(".option").forEach((el, i) => {
+        el.classList.toggle("selected", i === idx);
+      });
+    }
+
+    checkButton.addEventListener("click", () => checkAnswer());
+    continueButton.addEventListener("click", () => continueQuiz());
+    restartBtn.addEventListener("click", () => restartQuiz());
+
+    function checkAnswer(){
+      if(selectedOptionIndex === null){
+        alert("Selecteer alstublieft een antwoord!");
+        return;
+      }
+
+      const itemId = queue[0];
+      const item = items.find(it => it.id === itemId);
+      if(!item) return;
+
+      const selected = item.options[selectedOptionIndex];
+      const isCorrect = (selected === item.correctAnswer);
+
+      // Markeer UI
+      const optionEls = document.querySelectorAll(".option");
+      optionEls.forEach((el, i) => {
+        el.replaceWith(el.cloneNode(true)); // remove listeners
+      });
+      // reselect after clone
+      const optionEls2 = document.querySelectorAll(".option");
+      optionEls2.forEach((el, i) => {
+        const value = item.options[i];
+        if(value === item.correctAnswer) el.classList.add("correct");
+        else if(i === selectedOptionIndex) el.classList.add("incorrect");
+      });
+
+      feedbackEl.classList.add("active", isCorrect ? "correct" : "incorrect");
+      feedbackTitleEl.textContent = isCorrect ? "✅ Correct!" : "❌ Fout";
+      explanationEl.textContent = item.explanation;
+
+      // Logic: spaced repetition
+      if(isCorrect){
+        item.mastered += 1;
+
+        // klaar?
+        if(item.mastered >= MASTER_THRESHOLD){
+          // verwijder uit queue
+          queue.shift();
+        } else {
+          // nog niet “beheerst”: later opnieuw
+          queue.shift();
+          reinsertLater(item.id, 6);
+        }
+      } else {
+        item.wrongCount += 1;
+        totalWrong += 1;
+
+        // fout: terug later, iets sneller
+        queue.shift();
+        reinsertLater(item.id, 3);
+      }
+
+      checkButton.classList.add("hidden");
+      continueButton.classList.remove("hidden");
+      updateStats();
+    }
+
+    function reinsertLater(itemId, offset){
+      const pos = Math.min(queue.length, offset);
+      queue.splice(pos, 0, itemId);
+    }
+
+    function continueQuiz(){
+      showNextFromQueue();
+    }
+
+    function updateStats(){
+      const mastered = items.filter(it => it.mastered >= MASTER_THRESHOLD).length;
+      const total = items.length;
+      const remaining = total - mastered;
+
+      statRemaining.textContent = remaining;
+      statMastered.textContent = mastered;
+      statWrong.textContent = totalWrong;
+
+      const progress = total === 0 ? 0 : Math.round((mastered / total) * 100);
+      progressFill.style.width = progress + "%";
+    }
+
+    function showResults(){
+      quizSection.classList.add("hidden");
+      resultsSection.classList.remove("hidden");
+
+      const mastered = items.filter(it => it.mastered >= MASTER_THRESHOLD).length;
+      const total = items.length;
+      const pct = total === 0 ? 0 : Math.round((mastered / total) * 100);
+
+      finalScoreEl.textContent = pct + "%";
+      finalMasteredEl.textContent = mastered;
+      finalTotalEl.textContent = total;
+    }
+
+    function restartQuiz(){
+      // reset UI/vars
+      courseContent = "";
+      items = [];
+      queue = [];
+      selectedOptionIndex = null;
+      totalWrong = 0;
+
+      document.getElementById("courseContent").value = "";
+      fileInput.value = "";
+      fileNameEl.classList.add("hidden");
+
+      resultsSection.classList.add("hidden");
+      quizSection.classList.add("hidden");
+      setupSection.classList.remove("hidden");
+      setTab("pdf");
+
+      externalQuestionsLoaded = false;
+      externalQuestionSetTitle = "";
+      // Laad opnieuw ingebouwde vragen zodat je meteen weer kan starten
+      loadEmbeddedQuestions();
+      if (questionFileInput) questionFileInput.value = "";
+      if (questionFileNameEl) questionFileNameEl.classList.add("hidden");
+    }
+  </script>
+</body>
+</html>
