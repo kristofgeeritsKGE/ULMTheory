@@ -135,7 +135,59 @@
 
   
 
-    /* ---------------- iPhone / kleine schermen: compactere tekst ---------------- */
+    
+
+    .toggle-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:-6px;
+      margin-bottom:10px;
+      padding:8px 10px;
+      border-radius:12px;
+      background:#f7f7f7;
+      border:2px solid #e5e5e5;
+    }
+    .toggle-label{
+      font-size:13px;
+      color:#3c3c3c;
+      font-weight:600;
+    }
+    /* iOS-style switch */
+    .switch{
+      position:relative;
+      display:inline-block;
+      width:44px;
+      height:26px;
+      flex:0 0 auto;
+    }
+    .switch input{ opacity:0; width:0; height:0; }
+    .slider{
+      position:absolute;
+      cursor:pointer;
+      top:0; left:0; right:0; bottom:0;
+      background:#cfcfcf;
+      transition: .2s;
+      border-radius:999px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+    }
+    .slider:before{
+      position:absolute;
+      content:"";
+      height:22px;
+      width:22px;
+      left:2px;
+      top:2px;
+      background:white;
+      transition:.2s;
+      border-radius:50%;
+      box-shadow:0 2px 6px rgba(0,0,0,0.18);
+    }
+    .switch input:checked + .slider{ background:#58cc02; }
+    .switch input:checked + .slider:before{ transform: translateX(18px); }
+
+/* ---------------- iPhone / kleine schermen: compactere tekst ---------------- */
     @media (max-width: 480px){
       body{ padding: 12px; }
       .header h1{ font-size: 1.6em; margin-bottom: 6px; }
@@ -166,7 +218,33 @@
       }
     }
 
-  </style>
+  
+    /* Antwoord wordt automatisch nagekeken; knop verbergen */
+    #checkButton{ display:none; }
+
+  
+/* ---------- Afkortingen inklapbaar ---------- */
+.acronym-toggle {
+  margin: 6px 0 10px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background:#e6f7ff;
+  border:2px solid #1cb0f6;
+  font-size:13px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.acronym-box.collapsed {
+  display:none;
+}
+
+/* ---------- Titel verbergen tijdens test ---------- */
+body.quiz-active .header {
+  display:none;
+}
+
+</style>
 </head>
 
 <body>
@@ -262,6 +340,15 @@
       </div>
 
       <div class="question-text" id="questionText"></div>
+      
+      <div class="toggle-row" id="toggleRow">
+        <div class="toggle-label">Afkortingen tonen</div>
+        <label class="switch" aria-label="Afkortingen tonen/bergen">
+          <input type="checkbox" id="toggleAcronyms" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
       <div id="acronymBox" class="acronym-box hidden"></div>
       <div class="options" id="optionsContainer"></div>
 
@@ -363,6 +450,21 @@
     //   AFKORTINGEN / BETEKENIS (klein venster onder de vraag)
     // -------------------------
     const acronymBoxEl = document.getElementById("acronymBox");
+    const toggleAcronymsEl = document.getElementById("toggleAcronyms");
+
+    // Onthoud voorkeur (default: aan)
+    const storedShowAcronyms = localStorage.getItem("showAcronyms");
+    let showAcronyms = storedShowAcronyms === null ? true : (storedShowAcronyms === "1");
+    if(toggleAcronymsEl){
+      toggleAcronymsEl.checked = showAcronyms;
+      toggleAcronymsEl.addEventListener("change", () => {
+        showAcronyms = !!toggleAcronymsEl.checked;
+        localStorage.setItem("showAcronyms", showAcronyms ? "1" : "0");
+        // Her-render op huidige vraag
+        try{ renderAcronymsForQuestion(document.getElementById("questionText")?.innerText || ""); }catch(e){}
+      });
+    }
+
 
     // Basis woordenlijst (NL) – uitbreidbaar
     const ACRONYM_GLOSSARY = {
@@ -446,6 +548,12 @@
 
     function renderAcronymsForQuestion(questionText){
       if(!acronymBoxEl) return;
+      // Toggle: afkortingen verbergen
+      if(typeof showAcronyms !== "undefined" && !showAcronyms){
+        acronymBoxEl.classList.add("hidden");
+        acronymBoxEl.innerHTML = "";
+        return;
+      }
       const acrs = extractAcronyms(questionText);
 
       if(!acrs.length){
@@ -1053,11 +1161,14 @@
     }
 
     function selectOption(idx){
+      // Als al nagekeken, niet meer wisselen
       if(checkButton.classList.contains("hidden")) return;
       selectedOptionIndex = idx;
       document.querySelectorAll(".option").forEach((el, i) => {
         el.classList.toggle("selected", i === idx);
       });
+      // Auto-controle zodra je een antwoord tikt
+      checkAnswer();
     }
 
     checkButton.addEventListener("click", () => checkAnswer());
@@ -1181,5 +1292,48 @@
       if (questionFileNameEl) questionFileNameEl.classList.add("hidden");
     }
   </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+  // ---- Afkortingen inklapbaar maken ----
+  function enhanceAcronymBoxes(){
+    document.querySelectorAll('.acronym-box').forEach(box => {
+      if (box.dataset.enhanced) return;
+      box.dataset.enhanced = "true";
+
+      const toggle = document.createElement("div");
+      toggle.className = "acronym-toggle";
+      toggle.textContent = "Afkortingen tonen / verbergen";
+
+      box.classList.add("collapsed");
+
+      toggle.addEventListener("click", () => {
+        box.classList.toggle("collapsed");
+      });
+
+      box.parentNode.insertBefore(toggle, box);
+    });
+  }
+
+  enhanceAcronymBoxes();
+
+  // opnieuw toepassen wanneer vraag wisselt
+  const observer = new MutationObserver(enhanceAcronymBoxes);
+  observer.observe(document.body, { childList:true, subtree:true });
+
+  // ---- Titel verbergen zodra test start ----
+  document.body.addEventListener("click", function(e){
+    const btn = e.target.closest("button");
+    if(!btn) return;
+
+    if(btn.textContent && btn.textContent.toLowerCase().includes("start")){
+      document.body.classList.add("quiz-active");
+    }
+  });
+
+});
+</script>
+
 </body>
 </html>
