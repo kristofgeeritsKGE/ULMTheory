@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>ULM Theorie - FlyTest</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body{
+      font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height:100vh;
+      padding:16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    .container{ max-width:900px; margin:0 auto; }
+    .header{ text-align:center; color:#fff; margin-bottom:24px; }
+    .header h1{ font-size:1.8em; margin-bottom:8px; text-shadow:2px 2px 4px rgba(0,0,0,0.2); }
+    .owl-emoji{ font-size:2.5em; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    
+    .card{
+      background:#fff; border-radius:16px; padding:20px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.15); margin-bottom:16px;
+    }
+
+    /* Category Selection */
+    .category-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap:16px;
+      margin-bottom:20px;
+    }
+    .category-card{
+      background:#fff;
+      border:3px solid #e5e5e5;
+      border-radius:16px;
+      padding:24px;
+      text-align:center;
+      cursor:pointer;
+      transition:all 0.3s;
+      position:relative;
+      min-height:180px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+    }
+    .category-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 12px 24px rgba(0,0,0,0.15);
+    }
+    .category-card.selected{
+      border-color:#58cc02;
+      background:#e6f7e6;
+    }
+    .category-icon{
+      font-size:3.5em;
+      margin-bottom:12px;
+    }
+    .category-title{
+      font-size:1.1em;
+      color:#3c3c3c;
+      font-weight:700;
+      line-height:1.3;
+      margin-bottom:6px;
+    }
+    .category-subtitle{
+      font-size:0.85em;
+      color:#777;
+    }
+    .category-checkmark{
+      position:absolute;
+      top:12px;
+      right:12px;
+      width:28px;
+      height:28px;
+      background:#58cc02;
+      border-radius:50%;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      font-weight:bold;
+      font-size:1.1em;
+    }
+    .category-card.selected .category-checkmark{
+      display:flex;
+    }
+    .category-count{
+      font-size:0.75em;
+      color:#999;
+      margin-top:6px;
+    }
+    .category-progress{
+      position:absolute;
+      top:12px;
+      left:12px;
+      background:#58cc02;
+      color:#fff;
+      font-size:0.75em;
+      font-weight:bold;
+      padding:4px 8px;
+      border-radius:12px;
+      display:none;
+    }
+    .category-card.has-progress .category-progress{
+      display:block;
+    }
+
+    .btn-back-icon{
+      background:transparent;
+      border:none;
+      color:#667eea;
+      padding:8px;
+      font-size:1em;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:8px;
+      transition:background 0.2s;
+      min-width:40px;
+      height:40px;
+    }
+    .btn-back-icon:hover{
+      background:rgba(102, 126, 234, 0.1);
+    }
+    .btn-back-icon:active{
+      background:rgba(102, 126, 234, 0.2);
+      transform:scale(0.95);
+    }
+
+    .btn{
+      background:#58cc02; color:#fff; border:none; padding:16px 32px;
+      font-size:1.1em; font-weight:bold; border-radius:12px; cursor:pointer;
+      width:100%; margin-top:16px; transition:all 0.3s;
+      box-shadow:0 4px 0 #46a302; text-transform:uppercase; letter-spacing:0.5px;
+    }
+    .btn:hover{ background:#46a302; transform:translateY(-2px); box-shadow:0 6px 0 #3a8502; }
+    .btn:active{ transform:translateY(2px); box-shadow:0 2px 0 #46a302; }
+    .btn:disabled{ background:#cccccc; box-shadow:0 4px 0 #999999; cursor:not-allowed; }
+    .btn-secondary{ background:#1cb0f6; box-shadow:0 4px 0 #1899d6; }
+    .btn-secondary:hover{ background:#1899d6; box-shadow:0 6px 0 #1682be; }
+    .btn-pdf{
+      background:#ff6b6b;
+      box-shadow:0 4px 0 #ee5a52;
+      margin-top:12px;
+    }
+    .btn-pdf:hover{
+      background:#ee5a52;
+      box-shadow:0 6px 0 #d84a42;
+    }
+
+    .progress-bar{ width:100%; height:16px; background:#e5e5e5; border-radius:8px; overflow:hidden; margin-bottom:20px; }
+    .progress-fill{ height:100%; background:linear-gradient(90deg,#58cc02,#46a302); width:0%; transition:width 0.5s ease; border-radius:8px; }
+
+    .question-text{ font-size:1.3em; font-weight:bold; color:#3c3c3c; margin-bottom:20px; line-height:1.5; }
+    .options{ display:flex; flex-direction:column; gap:12px; }
+    .option{
+      padding:16px; border:3px solid #e5e5e5; border-radius:12px;
+      cursor:pointer; transition:all 0.3s; font-size:1em; background:#fff;
+      text-align:left;
+    }
+    .option:active{ transform:scale(0.98); }
+    .option.selected{ border-color:#1cb0f6; background:#e6f7ff; }
+    .option.correct{ border-color:#58cc02; background:#d7ffb8; }
+    .option.incorrect{ border-color:#ff4b4b; background:#ffd1d1; }
+
+    .feedback{ margin-top:24px; padding:20px; border-radius:12px; display:none; }
+    .feedback.active{ display:block; }
+    .feedback.correct{ background:#d7ffb8; border:3px solid #58cc02; }
+    .feedback.incorrect{ background:#ffd1d1; border:3px solid #ff4b4b; }
+    .feedback-title{ font-size:1.3em; font-weight:bold; margin-bottom:12px; }
+    .feedback.correct .feedback-title{ color:#46a302; }
+    .feedback.incorrect .feedback-title{ color:#d32f2f; }
+    .explanation{ font-size:0.95em; line-height:1.6; color:#3c3c3c; margin-bottom:12px; }
+
+    .stats{ display:flex; justify-content:space-around; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+    .stat{ text-align:center; min-width:80px; }
+    .stat-value{ font-size:1.8em; font-weight:bold; color:#58cc02; }
+    .stat-label{ font-size:0.8em; color:#777; margin-top:4px; }
+    .hidden{ display:none !important; }
+
+    .results-section{ text-align:center; }
+    .results-section h2{ font-size:2em; margin-bottom:16px; color:#3c3c3c; }
+    .score-circle{
+      width:160px; height:160px; border-radius:50%;
+      background:linear-gradient(135deg,#58cc02,#46a302);
+      margin:24px auto; display:flex; align-items:center; justify-content:center;
+      box-shadow:0 8px 24px rgba(88,204,2,0.3);
+    }
+    .score-text{ color:#fff; font-size:2.5em; font-weight:bold; }
+
+    /* PDF Popup Modal */
+    .pdf-modal{
+      display:none;
+      position:fixed;
+      top:0; left:0; right:0; bottom:0;
+      background:rgba(0,0,0,0.9);
+      z-index:1000;
+      padding:20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    .pdf-modal.active{ display:flex; flex-direction:column; }
+    .pdf-modal-header{
+      background:#fff;
+      padding:16px;
+      border-radius:12px 12px 0 0;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-shrink:0;
+    }
+    .pdf-modal-title{
+      font-size:1.1em;
+      font-weight:bold;
+      color:#3c3c3c;
+    }
+    .pdf-modal-close{
+      background:#ff4b4b;
+      color:#fff;
+      border:none;
+      width:36px;
+      height:36px;
+      border-radius:50%;
+      font-size:1.2em;
+      font-weight:bold;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .pdf-modal-content{
+      background:#fff;
+      flex:1;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:20px;
+    }
+    .pdf-modal-footer{
+      background:#fff;
+      padding:16px;
+      border-radius:0 0 12px 12px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+    .pdf-page-nav{
+      background:#667eea;
+      color:#fff;
+      border:none;
+      padding:12px 20px;
+      border-radius:8px;
+      font-size:1em;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    .pdf-page-nav:disabled{
+      background:#ccc;
+      cursor:not-allowed;
+    }
+    .pdf-page-info{
+      font-size:1em;
+      font-weight:bold;
+      color:#3c3c3c;
+      min-width:100px;
+      text-align:center;
+    }
+    #pdfCanvas{
+      max-width:100%;
+      height:auto;
+      box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .loading-spinner{
+      text-align:center;
+      padding:40px 20px;
+      color:#667eea;
+    }
+    .spinner{
+      border:4px solid #f3f3f3;
+      border-top:4px solid #667eea;
+      border-radius:50%;
+      width:50px;
+      height:50px;
+      animation:spin 1s linear infinite;
+      margin:0 auto 16px;
+    }
+    @keyframes spin{ 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+
+    /* iPhone optimizations */
+    @media (max-width: 480px){
+      body{ padding: 12px; }
+      .header h1{ font-size: 1.5em; }
+      .owl-emoji{ font-size: 2em; }
+      .card{ padding: 16px; }
+      .category-grid{ grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
+      .category-card{ padding:20px 16px; min-height:150px; }
+      .category-icon{ font-size:2.8em; }
+      .category-title{ font-size:1em; }
+      .question-text{ font-size: 1.1em; }
+      .option{ font-size: 0.95em; padding: 14px; }
+      .pdf-modal{ padding:10px; }
+      .pdf-modal-header{ padding:12px; }
+      .pdf-modal-content{ padding:12px; }
+      .pdf-page-nav{ padding:10px 16px; font-size:0.9em; }
+      .btn-back-icon{ min-width:36px; height:36px; padding:6px; }
+    }
+
+    /* Safe area support for iPhone notch */
+    @supports (padding: max(0px)){
+      body{
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+      }
+    }
+
+    /* Hide check button - auto-check on select */
+    #checkButton{ display:none; }
+
+    .quiz-active .header{
+      margin-bottom:16px;
+    }
+    .quiz-active .header h1{
+      font-size:1.3em;
+    }
+    .quiz-active .owl-emoji{
+      font-size:1.8em;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="owl-emoji">🦉</div>
+    <h1>ULM Theorie - FlyTest</h1>
+  </div>
+
+  <!-- Category Selection -->
+  <div id="categorySelection" class="card">
+    <h2 style="margin-bottom:24px; color:#3c3c3c; text-align:center;">Kies een categorie</h2>
+    <div class="category-grid" id="categoryGrid"></div>
+    <button class="btn" id="startStudyBtn" disabled>Start oefenen</button>
+  </div>
+
+  <!-- Quiz Section -->
+  <div id="quizSection" class="card hidden">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <button class="btn-back-icon" id="backToCategoriesFromQuizBtn">
+        <span style="font-size:1.2em;">←</span>
+      </button>
+      <div style="flex:1; text-align:center; font-weight:bold; color:#3c3c3c; font-size:1.1em;">
+        Quiz
+      </div>
+      <div style="width:40px;"></div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="statRemaining">0</div>
+        <div class="stat-label">Te gaan</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statMastered">0</div>
+        <div class="stat-label">Beheerst</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statWrong">0</div>
+        <div class="stat-label">Fouten</div>
+      </div>
+    </div>
+
+    <div class="question-text" id="questionText"></div>
+    <div class="options" id="optionsContainer"></div>
+
+    <div class="feedback" id="feedback">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div class="explanation" id="explanation"></div>
+      <button class="btn btn-pdf hidden" id="openPdfBtn">📘 Open cursus</button>
+    </div>
+
+    <button class="btn hidden" id="checkButton">Controleer antwoord</button>
+    <button class="btn hidden" id="continueButton">Volgende vraag</button>
+  </div>
+
+  <!-- Results Section -->
+  <div id="resultsSection" class="card hidden">
+    <div class="results-section">
+      <h2>🎉 Afgerond!</h2>
+      <div class="score-circle">
+        <div class="score-text" id="finalScore">0%</div>
+      </div>
+      <p style="font-size:1.2em; color:#3c3c3c; margin-bottom:8px;">
+        Je hebt <strong id="finalMastered">0</strong> van de <strong id="finalTotal">0</strong> vragen beheerst!
+      </p>
+      <button class="btn btn-secondary" id="backToCategoriesBtn">← Terug naar categorieën</button>
+      <button class="btn" id="restartBtn">Opnieuw starten</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- PDF Popup Modal -->
+<div id="pdfModal" class="pdf-modal">
+  <div class="pdf-modal-header">
+    <div class="pdf-modal-title" id="pdfModalTitle">Cursus</div>
+    <button class="pdf-modal-close" id="closePdfModal">×</button>
+  </div>
+  <div class="pdf-modal-content" id="pdfModalContent">
+    <div class="loading-spinner" id="pdfLoading">
+      <div class="spinner"></div>
+      <div>PDF laden...</div>
+    </div>
+    <canvas id="pdfCanvas"></canvas>
+  </div>
+  <div class="pdf-modal-footer">
+    <button class="pdf-page-nav" id="prevPage">← Vorige</button>
+    <div class="pdf-page-info" id="pageInfo">Pagina 1 / 1</div>
+    <button class="pdf-page-nav" id="nextPage">Volgende →</button>
+  </div>
+</div>
+
+<script>
+// Questions will be inserted here by the build script
+const EMBEDDED_QUESTIONS = {
+  meteo: `METEO_DATA`,
+  navigatie: `NAVIGATIE_DATA`,
+  vliegen: `VLIEGEN_DATA`,
+  reglementering: `REGLEMENTERING_DATA`
+};
+</script>
+
+<script src="pdf_data.js"></script>
+
+<script src="questions_data.js"></script>
+
+<script>
+  // ============ HARDCODED CATEGORIES ============
+  const CATEGORIES = {
+    meteo: {
+      name: 'Meteorologie',
+      icon: '🌦️',
+      subtitle: 'Weer & Atmosfeer',
+      pdfFile: 'Meteo.pdf'
+    },
+    navigatie: {
+      name: 'Navigatie',
+      icon: '🧭',
+      subtitle: 'Routeplanning & Kaarten',
+      pdfFile: 'navigatie.pdf'
+    },
+    vliegen: {
+      name: 'Principes van Vliegen',
+      icon: '✈️',
+      subtitle: 'Aerodynamica & Prestaties',
+      pdfFile: 'vliegen.pdf'
+    },
+    reglementering: {
+      name: 'Reglementering',
+      icon: '📋',
+      subtitle: 'Wet- & Regelgeving',
+      pdfFile: 'reglementering.pdf'
+    }
+  };
+
+  // ============ GLOBAL STATE ============
+  let selectedCategory = null;
+  let items = [];
+  let queue = [];
+  let selectedOptionIndex = null;
+  let totalWrong = 0;
+
+  // Session progress tracking - persists across category switches
+  let sessionProgress = {
+    meteo: {},
+    navigatie: {},
+    vliegen: {},
+    reglementering: {}
+  };
+
+  // PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  
+  let currentPdf = null;
+  let currentPdfPage = 1;
+  let currentPdfNumPages = 1;
+  let currentPdfFile = null;
+
+  // ============ DOM ELEMENTS ============
+  const categorySelection = document.getElementById("categorySelection");
+  const quizSection = document.getElementById("quizSection");
+  const resultsSection = document.getElementById("resultsSection");
+
+  const categoryGrid = document.getElementById("categoryGrid");
+  const startStudyBtn = document.getElementById("startStudyBtn");
+  const backToCategoriesBtn = document.getElementById("backToCategoriesBtn");
+  const backToCategoriesFromQuizBtn = document.getElementById("backToCategoriesFromQuizBtn");
+
+  const questionTextEl = document.getElementById("questionText");
+  const optionsContainer = document.getElementById("optionsContainer");
+  const feedbackEl = document.getElementById("feedback");
+  const feedbackTitleEl = document.getElementById("feedbackTitle");
+  const explanationEl = document.getElementById("explanation");
+  const openPdfBtn = document.getElementById("openPdfBtn");
+  const checkButton = document.getElementById("checkButton");
+  const continueButton = document.getElementById("continueButton");
+
+  const progressFill = document.getElementById("progressFill");
+  const statRemaining = document.getElementById("statRemaining");
+  const statMastered = document.getElementById("statMastered");
+  const statWrong = document.getElementById("statWrong");
+
+  const finalScoreEl = document.getElementById("finalScore");
+  const finalMasteredEl = document.getElementById("finalMastered");
+  const finalTotalEl = document.getElementById("finalTotal");
+  const restartBtn = document.getElementById("restartBtn");
+
+  const pdfModal = document.getElementById("pdfModal");
+  const pdfModalTitle = document.getElementById("pdfModalTitle");
+  const pdfCanvas = document.getElementById("pdfCanvas");
+  const pdfLoading = document.getElementById("pdfLoading");
+  const closePdfModal = document.getElementById("closePdfModal");
+  const prevPage = document.getElementById("prevPage");
+  const nextPage = document.getElementById("nextPage");
+  const pageInfo = document.getElementById("pageInfo");
+
+  // ============ INITIALIZE ============
+  function init() {
+    renderCategoryGrid();
+    setupEventListeners();
+  }
+
+  function renderCategoryGrid() {
+    categoryGrid.innerHTML = "";
+    
+    Object.entries(CATEGORIES).forEach(([key, category]) => {
+      const questionsData = window.QUESTIONS_DATA ? window.QUESTIONS_DATA[key] : null;
+      const questionCount = questionsData ? questionsData.questions.length : 0;
+      
+      // Calculate progress for this category
+      const categoryProgress = sessionProgress[key] || {};
+      const masteredCount = Object.values(categoryProgress).filter(p => p.mastered === 1).length;
+      const progressPercent = questionCount > 0 ? Math.round((masteredCount / questionCount) * 100) : 0;
+      
+      const card = document.createElement("div");
+      card.className = "category-card";
+      if (masteredCount > 0) {
+        card.classList.add("has-progress");
+      }
+      card.dataset.category = key;
+      card.innerHTML = `
+        <div class="category-progress">${masteredCount}/${questionCount}</div>
+        <div class="category-checkmark">✓</div>
+        <div class="category-icon">${category.icon}</div>
+        <div class="category-title">${category.name}</div>
+        <div class="category-subtitle">${category.subtitle}</div>
+        <div class="category-count">${questionCount} vragen${masteredCount > 0 ? ' • ' + progressPercent + '% beheerst' : ''}</div>
+      `;
+      card.addEventListener('click', () => selectCategory(key));
+      categoryGrid.appendChild(card);
+    });
+  }
+
+  function selectCategory(categoryKey) {
+    selectedCategory = categoryKey;
+    document.querySelectorAll('.category-card').forEach(card => {
+      card.classList.toggle('selected', card.dataset.category === categoryKey);
+    });
+    startStudyBtn.disabled = false;
+  }
+
+  function setupEventListeners() {
+    startStudyBtn.addEventListener('click', startQuiz);
+    continueButton.addEventListener('click', continueQuiz);
+    restartBtn.addEventListener('click', restartQuiz);
+    
+    backToCategoriesBtn.addEventListener('click', () => {
+      resultsSection.classList.add('hidden');
+      categorySelection.classList.remove('hidden');
+      document.body.classList.remove('quiz-active');
+      renderCategoryGrid(); // Refresh to show updated progress
+      selectedCategory = null;
+      document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      startStudyBtn.disabled = true;
+    });
+
+    backToCategoriesFromQuizBtn.addEventListener('click', () => {
+      saveCurrentProgress();
+      quizSection.classList.add('hidden');
+      categorySelection.classList.remove('hidden');
+      document.body.classList.remove('quiz-active');
+      renderCategoryGrid(); // Refresh to show updated progress
+      selectedCategory = null;
+      document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      startStudyBtn.disabled = true;
+    });
+
+    // PDF modal
+    closePdfModal.addEventListener('click', closePdfViewer);
+    prevPage.addEventListener('click', () => changePdfPage(-1));
+    nextPage.addEventListener('click', () => changePdfPage(1));
+    openPdfBtn.addEventListener('click', openPdfViewer);
+  }
+
+  function startQuiz() {
+    const categoryData = window.QUESTIONS_DATA[selectedCategory];
+    
+    if (!categoryData || !categoryData.questions || categoryData.questions.length === 0) {
+      alert("Geen vragen beschikbaar voor deze categorie!");
+      return;
+    }
+
+    // Load existing progress for this category
+    const categoryProgress = sessionProgress[selectedCategory] || {};
+
+    // Convert questions to internal format and restore progress
+    items = categoryData.questions.map(q => {
+      const existingProgress = categoryProgress[q.id] || { mastered: 0, wrongCount: 0 };
+      return {
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.options[q.correctIndex],
+        explanation: q.explanation,
+        mastered: existingProgress.mastered,
+        wrongCount: existingProgress.wrongCount,
+        _shownOptions: null
+      };
+    });
+
+    console.log(`📚 Starting quiz with ${items.length} total questions`);
+    console.log(`✅ Already mastered: ${items.filter(it => it.mastered === 1).length}`);
+
+    // Only add questions to queue that aren't mastered yet (mastered = 0)
+    const unmasteredItems = items.filter(it => it.mastered === 0);
+    
+    if (unmasteredItems.length === 0) {
+      alert("Je hebt alle vragen in deze categorie al beheerst! 🎉");
+      return;
+    }
+
+    console.log(`📝 Questions in queue: ${unmasteredItems.length}`);
+
+    shuffle(unmasteredItems);
+    queue = unmasteredItems.map(it => it.id);
+    totalWrong = items.reduce((sum, item) => sum + item.wrongCount, 0);
+
+    categorySelection.classList.add("hidden");
+    quizSection.classList.remove("hidden");
+    document.body.classList.add("quiz-active");
+
+    showNextFromQueue();
+  }
+
+  function saveCurrentProgress() {
+    // Save current quiz progress to session
+    if (!selectedCategory || items.length === 0) return;
+
+    items.forEach(item => {
+      sessionProgress[selectedCategory][item.id] = {
+        mastered: item.mastered,
+        wrongCount: item.wrongCount
+      };
+    });
+  }
+
+  function showNextFromQueue() {
+    if (queue.length === 0) {
+      console.log("🏁 No more questions in queue - showing results");
+      showResults();
+      return;
+    }
+
+    console.log(`📋 Queue has ${queue.length} questions remaining`);
+
+    selectedOptionIndex = null;
+    feedbackEl.classList.remove("active", "correct", "incorrect");
+    openPdfBtn.classList.add("hidden");
+    checkButton.classList.remove("hidden");
+    continueButton.classList.add("hidden");
+
+    const itemId = queue[0];
+    const item = items.find(it => it.id === itemId);
+    if (!item) {
+      console.warn(`⚠️ Question ${itemId} not found in items array`);
+      queue.shift();
+      return showNextFromQueue();
+    }
+
+    console.log(`❓ Showing question: ${item.id}`);
+    renderItem(item);
+    updateStats();
+  }
+
+  function renderItem(item) {
+    questionTextEl.textContent = item.question;
+
+    const shownOptions = item.options.slice();
+    shuffle(shownOptions);
+    item._shownOptions = shownOptions;
+
+    optionsContainer.innerHTML = "";
+    shownOptions.forEach((opt, idx) => {
+      const d = document.createElement("div");
+      d.className = "option";
+      d.textContent = opt;
+      d.addEventListener("click", () => selectOption(idx));
+      optionsContainer.appendChild(d);
+    });
+  }
+
+  function selectOption(idx) {
+    if (checkButton.classList.contains("hidden")) return;
+    selectedOptionIndex = idx;
+    document.querySelectorAll(".option").forEach((el, i) => {
+      el.classList.toggle("selected", i === idx);
+    });
+    checkAnswer();
+  }
+
+  function checkAnswer() {
+    if (selectedOptionIndex === null) {
+      alert("Selecteer een antwoord!");
+      return;
+    }
+
+    const itemId = queue[0];
+    const item = items.find(it => it.id === itemId);
+    if (!item) return;
+
+    const selected = item._shownOptions[selectedOptionIndex];
+    const isCorrect = selected === item.correctAnswer;
+
+    // Disable all options (remove click handlers)
+    const optionEls = document.querySelectorAll(".option");
+    optionEls.forEach((el, i) => {
+      el.replaceWith(el.cloneNode(true));
+    });
+
+    // Highlight correct and incorrect answers
+    const optionEls2 = document.querySelectorAll(".option");
+    optionEls2.forEach((el, i) => {
+      const value = item._shownOptions[i];
+      if (value === item.correctAnswer) el.classList.add("correct");
+      else if (i === selectedOptionIndex) el.classList.add("incorrect");
+    });
+
+    // Show feedback
+    feedbackEl.classList.add("active", isCorrect ? "correct" : "incorrect");
+    feedbackTitleEl.textContent = isCorrect ? "✅ Correct!" : "❌ Fout";
+    explanationEl.textContent = item.explanation;
+
+    // Extract page number and show PDF button if available
+    const pageNum = extractPageNumber(item.explanation);
+    if (pageNum) {
+      const category = CATEGORIES[selectedCategory];
+      if (category && category.pdfFile) {
+        openPdfBtn.classList.remove("hidden");
+        openPdfBtn.textContent = `📘 Open cursus op p. ${pageNum}`;
+        openPdfBtn.dataset.page = pageNum;
+        openPdfBtn.dataset.pdfFile = category.pdfFile;
+      }
+    }
+
+    // Remove this question from the queue
+    queue.shift();
+
+    // Update the item's status
+    if (isCorrect) {
+      // Mark as mastered - question won't come back
+      item.mastered = 1;
+      console.log(`✅ Correct! Question ${item.id} mastered. Total mastered: ${items.filter(it => it.mastered === 1).length}/${items.length}`);
+    } else {
+      // Mark as wrong and add back to queue
+      item.wrongCount += 1;
+      totalWrong += 1;
+      
+      // Add back to queue after a few questions
+      reinsertLater(item.id, 3);
+      console.log(`❌ Wrong! Question ${item.id} will appear again. Wrong count: ${totalWrong}`);
+    }
+
+    checkButton.classList.add("hidden");
+    continueButton.classList.remove("hidden");
+    
+    // Update stats immediately
+    updateStats();
+  }
+
+  function extractPageNumber(text) {
+    // Extract page number from explanation like "p. 4/88" or "(p. 20/88)" or "p. 3"
+    const match = text.match(/\(?\s*p\.\s*(\d+)(?:\/\d+)?\s*\)?/i);
+    return match ? parseInt(match[1]) : null;
+  }
+
+  async function openPdfViewer() {
+    const pageNum = parseInt(openPdfBtn.dataset.page) || 1;
+    const pdfFileName = openPdfBtn.dataset.pdfFile;
+    
+    currentPdfFile = pdfFileName;
+    currentPdfPage = pageNum;
+    pdfModal.classList.add("active");
+    pdfModalTitle.textContent = pdfFileName;
+    
+    await loadPdf(pdfFileName, pageNum);
+  }
+
+  function closePdfViewer() {
+    pdfModal.classList.remove("active");
+    currentPdf = null;
+  }
+
+  async function loadPdf(fileName, pageNum = 1) {
+    pdfLoading.style.display = 'block';
+    pdfCanvas.style.display = 'none';
+
+    try {
+      // Check if we have embedded PDFs
+      if (!window.EMBEDDED_PDFS || !window.EMBEDDED_PDFS[fileName]) {
+        throw new Error(`PDF ${fileName} niet gevonden in embedded data`);
+      }
+
+      // Get base64 data URL
+      const pdfDataUrl = window.EMBEDDED_PDFS[fileName];
+      
+      // Convert data URL to array buffer
+      const response = await fetch(pdfDataUrl);
+      const arrayBuffer = await response.arrayBuffer();
+      
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      currentPdf = pdf;
+      currentPdfNumPages = pdf.numPages;
+      currentPdfPage = Math.min(Math.max(1, pageNum), currentPdfNumPages);
+      
+      await renderPdfPage(currentPdfPage);
+      updatePdfNavigation();
+      
+      pdfLoading.style.display = 'none';
+      pdfCanvas.style.display = 'block';
+    } catch (err) {
+      console.error("Error loading PDF:", err);
+      alert("Fout bij laden van PDF: " + err.message);
+      pdfLoading.style.display = 'none';
+      closePdfViewer();
+    }
+  }
+
+  async function renderPdfPage(pageNum) {
+    if (!currentPdf) return;
+
+    const page = await currentPdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 1.5 });
+    
+    const canvas = pdfCanvas;
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    const renderContext = {
+      canvasContext: context,
+      viewport: viewport
+    };
+
+    await page.render(renderContext).promise;
+  }
+
+  function changePdfPage(delta) {
+    if (!currentPdf) return;
+    
+    const newPage = currentPdfPage + delta;
+    if (newPage < 1 || newPage > currentPdfNumPages) return;
+    
+    currentPdfPage = newPage;
+    renderPdfPage(currentPdfPage);
+    updatePdfNavigation();
+  }
+
+  function updatePdfNavigation() {
+    pageInfo.textContent = `Pagina ${currentPdfPage} / ${currentPdfNumPages}`;
+    prevPage.disabled = currentPdfPage <= 1;
+    nextPage.disabled = currentPdfPage >= currentPdfNumPages;
+  }
+
+  function reinsertLater(itemId, minGap) {
+    const gap = Math.min(Math.max(0, minGap || 0), queue.length);
+    if (queue.length <= gap) {
+      queue.push(itemId);
+      return;
+    }
+    const pos = gap + Math.floor(Math.random() * (queue.length - gap + 1));
+    queue.splice(pos, 0, itemId);
+  }
+
+  function continueQuiz() {
+    showNextFromQueue();
+  }
+
+  function updateStats() {
+    // Count mastered questions (answered correctly once)
+    const masteredCount = items.filter(it => it.mastered === 1).length;
+    const total = items.length;
+    const remaining = total - masteredCount;
+
+    // Update display
+    statRemaining.textContent = remaining;
+    statMastered.textContent = masteredCount;
+    statWrong.textContent = totalWrong;
+
+    // Update progress bar
+    const progress = total === 0 ? 0 : Math.round((masteredCount / total) * 100);
+    progressFill.style.width = progress + "%";
+    
+    console.log(`📊 Stats: ${masteredCount} mastered, ${remaining} remaining, ${totalWrong} wrong, ${progress}% complete`);
+  }
+
+  function showResults() {
+    saveCurrentProgress();
+    
+    quizSection.classList.add("hidden");
+    resultsSection.classList.remove("hidden");
+
+    const mastered = items.filter(it => it.mastered === 1).length;
+    const total = items.length;
+    const pct = total === 0 ? 0 : Math.round((mastered / total) * 100);
+
+    finalScoreEl.textContent = pct + "%";
+    finalMasteredEl.textContent = mastered;
+    finalTotalEl.textContent = total;
+    
+    console.log(`🎉 Quiz completed! ${mastered}/${total} questions mastered (${pct}%)`);
+  }
+
+  function restartQuiz() {
+    // Clear all session progress
+    sessionProgress = {
+      meteo: {},
+      navigatie: {},
+      vliegen: {},
+      reglementering: {}
+    };
+
+    items = [];
+    queue = [];
+    selectedOptionIndex = null;
+    totalWrong = 0;
+
+    resultsSection.classList.add("hidden");
+    quizSection.classList.add("hidden");
+    categorySelection.classList.remove("hidden");
+
+    document.body.classList.remove("quiz-active");
+    
+    // Reset category selection and refresh grid
+    selectedCategory = null;
+    renderCategoryGrid();
+    document.querySelectorAll('.category-card').forEach(card => {
+      card.classList.remove('selected');
+    });
+    startStudyBtn.disabled = true;
+  }
+
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  // Initialize on load
+  init();
+</script>
+
+</body>
+</html>
