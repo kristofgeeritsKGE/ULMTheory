@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>ULM Theorie - FlyTest</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body{
+      font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height:100vh;
+      padding:16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    .container{ max-width:900px; margin:0 auto; }
+    .header{ text-align:center; color:#fff; margin-bottom:24px; }
+    .header h1{ font-size:1.8em; margin-bottom:8px; text-shadow:2px 2px 4px rgba(0,0,0,0.2); }
+    .owl-emoji{ font-size:2.5em; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    
+    .card{
+      background:#fff; border-radius:16px; padding:20px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.15); margin-bottom:16px;
+    }
+
+    /* Category Selection */
+    .category-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap:16px;
+      margin-bottom:20px;
+    }
+    .category-card{
+      background:#fff;
+      border:3px solid #e5e5e5;
+      border-radius:16px;
+      padding:24px;
+      text-align:center;
+      cursor:pointer;
+      transition:all 0.3s;
+      position:relative;
+      min-height:180px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+    }
+    .category-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 12px 24px rgba(0,0,0,0.15);
+    }
+    .category-card.selected{
+      border-color:#58cc02;
+      background:#e6f7e6;
+    }
+    .category-icon{
+      font-size:3.5em;
+      margin-bottom:12px;
+    }
+    .category-title{
+      font-size:1.1em;
+      color:#3c3c3c;
+      font-weight:700;
+      line-height:1.3;
+      margin-bottom:6px;
+    }
+    .category-subtitle{
+      font-size:0.85em;
+      color:#777;
+    }
+    .category-checkmark{
+      position:absolute;
+      top:12px;
+      right:12px;
+      width:28px;
+      height:28px;
+      background:#58cc02;
+      border-radius:50%;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      font-weight:bold;
+      font-size:1.1em;
+    }
+    .category-card.selected .category-checkmark{
+      display:flex;
+    }
+    .category-count{
+      font-size:0.75em;
+      color:#999;
+      margin-top:6px;
+    }
+    .category-progress{
+      position:absolute;
+      top:12px;
+      left:12px;
+      background:#58cc02;
+      color:#fff;
+      font-size:0.75em;
+      font-weight:bold;
+      padding:4px 8px;
+      border-radius:12px;
+      display:none;
+    }
+    .category-card.has-progress .category-progress{
+      display:block;
+    }
+
+    .btn-back-icon{
+      background:transparent;
+      border:none;
+      color:#667eea;
+      padding:8px;
+      font-size:1em;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:8px;
+      transition:background 0.2s;
+      min-width:40px;
+      height:40px;
+    }
+    .btn-back-icon:hover{
+      background:rgba(102, 126, 234, 0.1);
+    }
+    .btn-back-icon:active{
+      background:rgba(102, 126, 234, 0.2);
+      transform:scale(0.95);
+    }
+
+    .btn{
+      background:#58cc02; color:#fff; border:none; padding:16px 32px;
+      font-size:1.1em; font-weight:bold; border-radius:12px; cursor:pointer;
+      width:100%; margin-top:16px; transition:all 0.3s;
+      box-shadow:0 4px 0 #46a302; text-transform:uppercase; letter-spacing:0.5px;
+    }
+    .btn:hover{ background:#46a302; transform:translateY(-2px); box-shadow:0 6px 0 #3a8502; }
+    .btn:active{ transform:translateY(2px); box-shadow:0 2px 0 #46a302; }
+    .btn:disabled{ background:#cccccc; box-shadow:0 4px 0 #999999; cursor:not-allowed; }
+    .btn-secondary{ background:#1cb0f6; box-shadow:0 4px 0 #1899d6; }
+    .btn-secondary:hover{ background:#1899d6; box-shadow:0 6px 0 #1682be; }
+    .btn-pdf{
+      background:#ff6b6b;
+      box-shadow:0 4px 0 #ee5a52;
+      margin-top:12px;
+    }
+    .btn-pdf:hover{
+      background:#ee5a52;
+      box-shadow:0 6px 0 #d84a42;
+    }
+
+    .progress-bar{ width:100%; height:16px; background:#e5e5e5; border-radius:8px; overflow:hidden; margin-bottom:20px; }
+    .progress-fill{ height:100%; background:linear-gradient(90deg,#58cc02,#46a302); width:0%; transition:width 0.5s ease; border-radius:8px; }
+
+    .question-text{ font-size:1.3em; font-weight:bold; color:#3c3c3c; margin-bottom:20px; line-height:1.5; }
+    .options{ display:flex; flex-direction:column; gap:12px; }
+    .option{
+      padding:16px; border:3px solid #e5e5e5; border-radius:12px;
+      cursor:pointer; transition:all 0.3s; font-size:1em; background:#fff;
+      text-align:left;
+    }
+    .option:active{ transform:scale(0.98); }
+    .option.selected{ border-color:#1cb0f6; background:#e6f7ff; }
+    .option.correct{ border-color:#58cc02; background:#d7ffb8; }
+    .option.incorrect{ border-color:#ff4b4b; background:#ffd1d1; }
+
+    .feedback{ margin-top:24px; padding:20px; border-radius:12px; display:none; }
+    .feedback.active{ display:block; }
+    .feedback.correct{ background:#d7ffb8; border:3px solid #58cc02; }
+    .feedback.incorrect{ background:#ffd1d1; border:3px solid #ff4b4b; }
+    .feedback-title{ font-size:1.3em; font-weight:bold; margin-bottom:12px; }
+    .feedback.correct .feedback-title{ color:#46a302; }
+    .feedback.incorrect .feedback-title{ color:#d32f2f; }
+    .explanation{ font-size:0.95em; line-height:1.6; color:#3c3c3c; margin-bottom:12px; }
+
+    .stats{ display:flex; justify-content:space-around; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+    .stat{ text-align:center; min-width:80px; }
+    .stat-value{ font-size:1.8em; font-weight:bold; color:#58cc02; }
+    .stat-label{ font-size:0.8em; color:#777; margin-top:4px; }
+    .hidden{ display:none !important; }
+
+    .results-section{ text-align:center; }
+    .results-section h2{ font-size:2em; margin-bottom:16px; color:#3c3c3c; }
+    .score-circle{
+      width:160px; height:160px; border-radius:50%;
+      background:linear-gradient(135deg,#58cc02,#46a302);
+      margin:24px auto; display:flex; align-items:center; justify-content:center;
+      box-shadow:0 8px 24px rgba(88,204,2,0.3);
+    }
+    .score-text{ color:#fff; font-size:2.5em; font-weight:bold; }
+
+    /* PDF Popup Modal */
+    .pdf-modal{
+      display:none;
+      position:fixed;
+      top:0; left:0; right:0; bottom:0;
+      background:rgba(0,0,0,0.9);
+      z-index:1000;
+      padding:20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    .pdf-modal.active{ display:flex; flex-direction:column; }
+    .pdf-modal-header{
+      background:#fff;
+      padding:16px;
+      border-radius:12px 12px 0 0;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      flex-shrink:0;
+    }
+    .pdf-modal-title{
+      font-size:1.1em;
+      font-weight:bold;
+      color:#3c3c3c;
+    }
+    .pdf-modal-close{
+      background:#ff4b4b;
+      color:#fff;
+      border:none;
+      width:36px;
+      height:36px;
+      border-radius:50%;
+      font-size:1.2em;
+      font-weight:bold;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .pdf-modal-content{
+      background:#fff;
+      flex:1;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:20px;
+    }
+    .pdf-modal-footer{
+      background:#fff;
+      padding:16px;
+      border-radius:0 0 12px 12px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+    .pdf-page-nav{
+      background:#667eea;
+      color:#fff;
+      border:none;
+      padding:12px 20px;
+      border-radius:8px;
+      font-size:1em;
+      font-weight:bold;
+      cursor:pointer;
+    }
+    .pdf-page-nav:disabled{
+      background:#ccc;
+      cursor:not-allowed;
+    }
+    .pdf-page-info{
+      font-size:1em;
+      font-weight:bold;
+      color:#3c3c3c;
+      min-width:100px;
+      text-align:center;
+    }
+    #pdfCanvas{
+      max-width:100%;
+      height:auto;
+      box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .loading-spinner{
+      text-align:center;
+      padding:40px 20px;
+      color:#667eea;
+    }
+    .spinner{
+      border:4px solid #f3f3f3;
+      border-top:4px solid #667eea;
+      border-radius:50%;
+      width:50px;
+      height:50px;
+      animation:spin 1s linear infinite;
+      margin:0 auto 16px;
+    }
+    @keyframes spin{ 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+
+    /* iPhone optimizations */
+    @media (max-width: 480px){
+      body{ padding: 12px; }
+      .header h1{ font-size: 1.5em; }
+      .owl-emoji{ font-size: 2em; }
+      .card{ padding: 16px; }
+      .category-grid{ grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:12px; }
+      .category-card{ padding:20px 16px; min-height:150px; }
+      .category-icon{ font-size:2.8em; }
+      .category-title{ font-size:1em; }
+      .question-text{ font-size: 1.1em; }
+      .option{ font-size: 0.95em; padding: 14px; }
+      .pdf-modal{ padding:10px; }
+      .pdf-modal-header{ padding:12px; }
+      .pdf-modal-content{ padding:12px; }
+      .pdf-page-nav{ padding:10px 16px; font-size:0.9em; }
+      .btn-back-icon{ min-width:36px; height:36px; padding:6px; }
+    }
+
+    /* Safe area support for iPhone notch */
+    @supports (padding: max(0px)){
+      body{
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+      }
+    }
+
+    /* Hide check button - auto-check on select */
+    #checkButton{ display:none; }
+
+    .quiz-active .header{
+      margin-bottom:16px;
+    }
+    .quiz-active .header h1{
+      font-size:1.3em;
+    }
+    .quiz-active .owl-emoji{
+      font-size:1.8em;
+    }
+
+    /* Learning Mode Toggle */
+    .learning-mode-toggle{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:14px;
+      background:linear-gradient(135deg,#fff8e1,#fffde7);
+      border:2px solid #f0c040;
+      border-radius:14px;
+      padding:14px 20px;
+      margin-bottom:20px;
+      cursor:pointer;
+      transition:all 0.3s;
+      user-select:none;
+    }
+    .learning-mode-toggle:hover{
+      background:linear-gradient(135deg,#fff3cd,#fff9e6);
+      transform:translateY(-1px);
+      box-shadow:0 4px 12px rgba(240,192,64,0.25);
+    }
+    .learning-mode-icon{
+      font-size:1.8em;
+    }
+    .learning-mode-label{
+      flex:1;
+    }
+    .learning-mode-title{
+      font-size:1em;
+      font-weight:700;
+      color:#5c4000;
+    }
+    .learning-mode-desc{
+      font-size:0.8em;
+      color:#8a6a00;
+      margin-top:2px;
+    }
+    /* Custom toggle switch */
+    .toggle-switch{
+      position:relative;
+      width:52px;
+      height:28px;
+      flex-shrink:0;
+    }
+    .toggle-switch input{
+      opacity:0;
+      width:0;
+      height:0;
+      position:absolute;
+    }
+    .toggle-slider{
+      position:absolute;
+      top:0; left:0; right:0; bottom:0;
+      background:#ccc;
+      border-radius:28px;
+      transition:0.3s;
+      cursor:pointer;
+    }
+    .toggle-slider:before{
+      position:absolute;
+      content:"";
+      height:20px;
+      width:20px;
+      left:4px;
+      bottom:4px;
+      background:#fff;
+      border-radius:50%;
+      transition:0.3s;
+      box-shadow:0 2px 4px rgba(0,0,0,0.2);
+    }
+    .toggle-switch input:checked + .toggle-slider{
+      background:linear-gradient(135deg,#f0c040,#e0a020);
+    }
+    .toggle-switch input:checked + .toggle-slider:before{
+      transform:translateX(24px);
+    }
+
+    /* Video card shown in quiz during learning mode */
+    .video-card{
+      background:linear-gradient(135deg,#0d1b2a,#1b3a5c);
+      border-radius:16px;
+      padding:0;
+      margin-bottom:8px;
+      overflow:hidden;
+      box-shadow:0 4px 20px rgba(0,0,0,0.3);
+    }
+    .video-card-header{
+      padding:16px 20px 12px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .video-badge{
+      background:rgba(240,192,64,0.2);
+      border:1px solid rgba(240,192,64,0.5);
+      border-radius:8px;
+      padding:4px 10px;
+      font-size:0.7em;
+      font-weight:700;
+      color:#f0c040;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      white-space:nowrap;
+    }
+    .video-card-title{
+      font-size:0.95em;
+      font-weight:700;
+      color:#e8f4fd;
+      line-height:1.3;
+    }
+    .video-card-subtitle{
+      font-size:0.78em;
+      color:#7ec8e3;
+      margin-top:2px;
+    }
+    .video-tabs{
+      display:flex;
+      gap:0;
+      padding:0 20px;
+      border-bottom:1px solid rgba(255,255,255,0.1);
+      overflow-x:auto;
+    }
+    .video-tab{
+      padding:8px 14px;
+      font-size:0.78em;
+      font-weight:600;
+      color:#7ec8e3;
+      cursor:pointer;
+      border-bottom:2px solid transparent;
+      transition:all 0.2s;
+      white-space:nowrap;
+      flex-shrink:0;
+    }
+    .video-tab.active{
+      color:#f0c040;
+      border-bottom-color:#f0c040;
+    }
+    .video-tab:hover:not(.active){
+      color:#a8d8ea;
+    }
+    .video-embed-area{
+      padding:16px 20px 20px;
+    }
+    /* Thumbnail container */
+    .video-thumb-container{
+      position:relative;
+      width:100%;
+      border-radius:10px;
+      overflow:hidden;
+      cursor:pointer;
+      background:#000;
+      aspect-ratio: 16/9;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .video-thumb-img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      transition:transform 0.3s;
+    }
+    .video-thumb-container:hover .video-thumb-img{
+      transform:scale(1.03);
+    }
+    .video-thumb-fallback{
+      width:100%;
+      height:100%;
+      background:linear-gradient(135deg,#0d1b2a,#1b3a5c);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      color:#7ec8e3;
+      position:absolute;
+      top:0; left:0;
+    }
+    .video-play-overlay{
+      position:absolute;
+      top:0; left:0; width:100%; height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,0.25);
+      transition:background 0.2s;
+    }
+    .video-thumb-container:hover .video-play-overlay{
+      background:rgba(0,0,0,0.4);
+    }
+    .video-play-btn-overlay{
+      width:64px; height:64px;
+      background:rgba(255,0,0,0.9);
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1.6em;
+      color:#fff;
+      border:3px solid rgba(255,255,255,0.4);
+      transition:transform 0.2s;
+      padding-left:4px;
+    }
+    .video-thumb-container:hover .video-play-btn-overlay{
+      transform:scale(1.12);
+    }
+    .video-yt-badge{
+      position:absolute;
+      bottom:10px;
+      right:10px;
+      background:rgba(0,0,0,0.75);
+      color:#fff;
+      font-size:0.72em;
+      font-weight:600;
+      padding:5px 10px;
+      border-radius:6px;
+      display:flex;
+      align-items:center;
+      gap:5px;
+      backdrop-filter:blur(4px);
+    }
+    .video-start-btn{
+      display:block;
+      width:100%;
+      margin-top:14px;
+      padding:14px;
+      background:linear-gradient(135deg,#58cc02,#46a302);
+      color:#fff;
+      font-size:1em;
+      font-weight:700;
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+      letter-spacing:0.5px;
+      box-shadow:0 4px 12px rgba(88,204,2,0.35);
+      transition:all 0.2s;
+      text-transform:uppercase;
+    }
+    .video-start-btn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 6px 16px rgba(88,204,2,0.45);
+    }
+    
+        .learning-mode-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:linear-gradient(135deg,#f0c040,#e0a020);
+      color:#5c4000;
+      font-size:0.75em;
+      font-weight:700;
+      padding:4px 10px;
+      border-radius:20px;
+      margin-left:8px;
+      letter-spacing:0.5px;
+    }
+
+    /* ── Exam mode ──────────────────────────────────────────────────── */
+    .exam-category-card{
+      background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
+      border:3px solid #e94560;
+      border-radius:16px;
+      padding:24px;
+      text-align:center;
+      cursor:pointer;
+      transition:all 0.3s;
+      position:relative;
+      min-height:180px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      grid-column: 1 / -1;
+    }
+    .exam-category-card:hover{
+      transform:translateY(-4px);
+      box-shadow:0 12px 32px rgba(233,69,96,0.4);
+    }
+    .exam-category-card.selected{
+      border-color:#ff8c00;
+      box-shadow:0 0 0 4px rgba(255,140,0,0.3);
+    }
+    .exam-category-card .category-checkmark{
+      background:#e94560;
+    }
+    .exam-icon{ font-size:3em; margin-bottom:10px; }
+    .exam-title{
+      font-size:1.2em;
+      font-weight:800;
+      color:#ffffff;
+      margin-bottom:4px;
+    }
+    .exam-subtitle{ font-size:0.85em; color:#a0c4ff; margin-bottom:6px; }
+    .exam-meta{ font-size:0.75em; color:#e94560; font-weight:700; letter-spacing:0.5px; }
+
+    /* Exam progress bar – red theme */
+    .exam-active .progress-fill{
+      background:linear-gradient(90deg,#e94560,#c0392b);
+    }
+    .exam-score-badge{
+      display:inline-block;
+      background:linear-gradient(135deg,#e94560,#c0392b);
+      color:#fff;
+      font-size:0.75em;
+      font-weight:700;
+      padding:4px 10px;
+      border-radius:20px;
+      margin-left:8px;
+      letter-spacing:0.5px;
+    }
+
+    /* Exam results */
+    .exam-results-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin:20px 0;
+    }
+    .exam-result-stat{
+      background:#f8f8f8;
+      border-radius:12px;
+      padding:16px;
+      text-align:center;
+    }
+    .exam-result-stat.pass{ background:#d7ffb8; border:2px solid #58cc02; }
+    .exam-result-stat.fail{ background:#ffd1d1; border:2px solid #ff4b4b; }
+    .exam-result-value{ font-size:2em; font-weight:800; color:#3c3c3c; }
+    .exam-result-label{ font-size:0.8em; color:#777; margin-top:4px; }
+
+    /* Per-question review in results */
+    .exam-review-list{
+      margin-top:16px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      max-height:320px;
+      overflow-y:auto;
+      text-align:left;
+    }
+    .exam-review-item{
+      padding:10px 14px;
+      border-radius:10px;
+      font-size:0.85em;
+      line-height:1.4;
+      border:2px solid transparent;
+    }
+    .exam-review-item.correct{ background:#d7ffb8; border-color:#58cc02; }
+    .exam-review-item.incorrect{ background:#ffd1d1; border-color:#ff4b4b; }
+    .exam-review-q{ font-weight:700; color:#3c3c3c; margin-bottom:4px; }
+    .exam-review-answer{ color:#555; }
+    .exam-review-source{
+      font-size:0.78em;
+      color:#888;
+      margin-top:4px;
+      cursor:pointer;
+      text-decoration:underline;
+    }
+    .exam-review-source:hover{ color:#667eea; }
+
+    /* Subject breakdown bars */
+    .subject-breakdown{
+      margin:16px 0 8px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      text-align:left;
+    }
+    .subject-row{ }
+    .subject-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:0.85em;
+      font-weight:700;
+      color:#3c3c3c;
+      margin-bottom:4px;
+    }
+    .subject-bar-bg{
+      background:#e8e8e8;
+      border-radius:8px;
+      height:12px;
+      overflow:hidden;
+    }
+    .subject-bar-fill{
+      height:100%;
+      border-radius:8px;
+      transition:width 0.6s ease;
+    }
+    .subject-bar-fill.good { background:linear-gradient(90deg,#58cc02,#46a302); }
+    .subject-bar-fill.mid  { background:linear-gradient(90deg,#f0a500,#d08000); }
+    .subject-bar-fill.poor { background:linear-gradient(90deg,#ff4b4b,#cc0000); }
+    .subject-note{
+      font-size:0.75em;
+      color:#888;
+      margin-top:2px;
+    }
+    .subject-note.warn{ color:#d08000; font-weight:600; }
+    .subject-note.bad { color:#cc0000; font-weight:600; }
+
+    @media(max-width:480px){
+      .exam-category-card{ padding:18px 14px; min-height:140px; }
+      .exam-icon{ font-size:2.5em; }
+      .exam-title{ font-size:1em; }
+      .exam-results-grid{ grid-template-columns:1fr 1fr; gap:8px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="owl-emoji">🦉</div>
+    <h1>ULM Theorie - FlyTest</h1>
+  </div>
+
+  <!-- Category Selection -->
+  <div id="categorySelection" class="card">
+    <h2 style="margin-bottom:20px; color:#3c3c3c; text-align:center;">Kies een categorie</h2>
+
+    <!-- Learning Mode Toggle -->
+    <label class="learning-mode-toggle" for="learningModeSwitch">
+      <div class="learning-mode-icon">🎓</div>
+      <div class="learning-mode-label">
+        <div class="learning-mode-title">Leermodus</div>
+        <div class="learning-mode-desc">Video's per hoofdstuk vóór de vragen</div>
+      </div>
+      <div class="toggle-switch">
+        <input type="checkbox" id="learningModeSwitch">
+        <span class="toggle-slider"></span>
+      </div>
+    </label>
+
+    <div class="category-grid" id="categoryGrid"></div>
+    <button class="btn" id="startStudyBtn" disabled>Start oefenen</button>
+  </div>
+
+  <!-- Quiz Section -->
+  <div id="quizSection" class="card hidden">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <button class="btn-back-icon" id="backToCategoriesFromQuizBtn">
+        <span style="font-size:1.2em;">←</span>
+      </button>
+      <div style="flex:1; text-align:center; font-weight:bold; color:#3c3c3c; font-size:1.1em;">
+        Quiz<span class="learning-mode-badge hidden" id="learningBadge">🎓 Leermodus</span>
+      </div>
+      <div style="width:40px;"></div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="statRemaining">0</div>
+        <div class="stat-label">Te gaan</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statMastered">0</div>
+        <div class="stat-label">Beheerst</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="statWrong">0</div>
+        <div class="stat-label">Fouten</div>
+      </div>
+    </div>
+
+    <div class="question-text" id="questionText"></div>
+    <div class="options" id="optionsContainer"></div>
+
+    <div class="feedback" id="feedback">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div class="explanation" id="explanation"></div>
+      <button class="btn btn-pdf hidden" id="openPdfBtn">📘 Open cursus</button>
+    </div>
+
+    <button class="btn hidden" id="checkButton">Controleer antwoord</button>
+    <button class="btn hidden" id="continueButton">Volgende vraag</button>
+  </div>
+
+  <!-- Exam Section -->
+  <div id="examSection" class="card hidden">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <button class="btn-back-icon" id="backToCategoriesFromExamBtn">
+        <span style="font-size:1.2em;">←</span>
+      </button>
+      <div style="flex:1; text-align:center; font-weight:bold; color:#3c3c3c; font-size:1.1em;">
+        Proefexamen<span class="exam-score-badge hidden" id="examBadge">🎓</span>
+      </div>
+      <div style="width:40px;"></div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="examProgressFill"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="examStatCurrent">1</div>
+        <div class="stat-label">Vraag</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="examStatCorrect" style="color:#58cc02;">0</div>
+        <div class="stat-label">Correct</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="examStatWrong" style="color:#ff4b4b;">0</div>
+        <div class="stat-label">Fout</div>
+      </div>
+    </div>
+
+    <div class="question-text" id="examQuestionText"></div>
+    <div class="options" id="examOptionsContainer"></div>
+
+    <div class="feedback hidden" id="examFeedback">
+      <div class="feedback-title" id="examFeedbackTitle"></div>
+      <div class="explanation" id="examExplanation"></div>
+      <button class="btn btn-pdf hidden" id="examOpenPdfBtn">📘 Open cursus</button>
+    </div>
+
+    <button class="btn hidden" id="examNextBtn">Volgende vraag →</button>
+  </div>
+
+  <!-- Exam Results Section -->
+  <div id="examResultsSection" class="card hidden">
+    <div class="results-section">
+      <h2 id="examResultsTitle">📝 Examen Resultaat</h2>
+      <div class="score-circle" id="examScoreCircle" style="background:linear-gradient(135deg,#e94560,#c0392b);">
+        <div class="score-text" id="examFinalScore">0%</div>
+      </div>
+      <div class="exam-results-grid">
+        <div class="exam-result-stat" id="examStatPassFail">
+          <div class="exam-result-value" id="examPassFailValue">–</div>
+          <div class="exam-result-label">Resultaat</div>
+        </div>
+        <div class="exam-result-stat">
+          <div class="exam-result-value" id="examCorrectCount">0/20</div>
+          <div class="exam-result-label">Correct / Totaal</div>
+        </div>
+      </div>
+
+      <div style="text-align:left; margin-top:8px;">
+        <div style="font-size:0.9em; font-weight:700; color:#3c3c3c; margin-bottom:8px;">📚 Resultaat per vak:</div>
+        <div class="subject-breakdown" id="subjectBreakdown"></div>
+      </div>
+
+      <div style="text-align:left; margin-top:16px;">
+        <div style="font-size:0.9em; font-weight:700; color:#3c3c3c; margin-bottom:8px;">📋 Overzicht per vraag:</div>
+        <div class="exam-review-list" id="examReviewList"></div>
+      </div>
+
+      <button class="btn" id="examRetryBtn" style="background:linear-gradient(135deg,#e94560,#c0392b); box-shadow:0 4px 0 #a93226; margin-top:16px;">🔄 Nieuw examen</button>
+      <button class="btn btn-secondary" id="examBackBtn">← Terug naar categorieën</button>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div id="resultsSection" class="card hidden">
+    <div class="results-section">
+      <h2>🎉 Afgerond!</h2>
+      <div class="score-circle">
+        <div class="score-text" id="finalScore">0%</div>
+      </div>
+      <p style="font-size:1.2em; color:#3c3c3c; margin-bottom:8px;">
+        Je hebt <strong id="finalMastered">0</strong> van de <strong id="finalTotal">0</strong> vragen beheerst!
+      </p>
+      <button class="btn btn-secondary" id="backToCategoriesBtn">← Terug naar categorieën</button>
+      <button class="btn" id="restartBtn">Opnieuw starten</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- PDF Popup Modal -->
+<div id="pdfModal" class="pdf-modal">
+  <div class="pdf-modal-header">
+    <div class="pdf-modal-title" id="pdfModalTitle">Cursus</div>
+    <button class="pdf-modal-close" id="closePdfModal">×</button>
+  </div>
+  <div class="pdf-modal-content" id="pdfModalContent">
+    <div class="loading-spinner" id="pdfLoading">
+      <div class="spinner"></div>
+      <div>PDF laden...</div>
+    </div>
+    <canvas id="pdfCanvas"></canvas>
+  </div>
+  <div class="pdf-modal-footer">
+    <button class="pdf-page-nav" id="prevPage">← Vorige</button>
+    <div class="pdf-page-info" id="pageInfo">Pagina 1 / 1</div>
+    <button class="pdf-page-nav" id="nextPage">Volgende →</button>
+  </div>
+</div>
+
+<script>
+// Questions will be inserted here by the build script
+const EMBEDDED_QUESTIONS = {
+  meteo: `METEO_DATA`,
+  navigatie: `NAVIGATIE_DATA`,
+  vliegen: `VLIEGEN_DATA`,
+  reglementering: `REGLEMENTERING_DATA`
+};
+</script>
+
+<script src="pdf_data.js"></script>
+
+<script src="questions_data.js"></script>
+
+<script>
+  // ============ EXAM QUESTIONS (110 vragen, 20 random per sessie) ============
+  const EXAM_QUESTIONS = [{"id": "met_q01", "question": "Wat betekent 'relatieve vochtigheid' (RV) in de meteorologie?", "options": ["De hoeveelheid waterdamp (g) per m³ lucht, bij VFR-vluchten", "De verhouding tussen aanwezige waterdamp en de maximaal mogelijke waterdamp bij dezelfde temperatuur", "De temperatuur waarbij condensatie start (condensatieniveau)", "De verhouding tussen dauwpunt en luchtdruk, op kruishoogte"], "correctIndex": 1, "explanation": "RV is de verhouding van de hoeveelheid waterdamp die de lucht werkelijk bevat tot wat ze bij dezelfde temperatuur maximaal kan bevatten (Meteo, p. 11).", "difficulty": "easy"}, {"id": "met_q02", "question": "Welke RV hoort bij 'verzadigde lucht' ?", "options": ["0%", "50%", "80%", "100%"], "correctIndex": 3, "explanation": "De cursus stelt: 100% is verzadigde lucht (mist) (Meteo, p. 11).", "difficulty": "easy"}, {"id": "met_q03", "question": "Wat kan gebeuren als men bij lage temperatuur extra waterdamp toevoegt aan reeds verzadigde lucht?", "options": ["De waterdamp condenseert altijd onmiddellijk tot regen", "De waterdamp kan sublimeren tot ijskristallen", "De RV daalt omdat koude lucht meer waterdamp kan bevatten", "Er ontstaat altijd hagel (GR)"], "correctIndex": 1, "explanation": "Bij voldoende lage temperatuur kan teveel waterdamp rechtstreeks overgaan naar ijskristallen (sublimeren) (Meteo, p. 11).", "difficulty": "medium"}, {"id": "met_q04", "question": "Volgens de 'tabel risico op carburatorbevriezing' is de grootste kans op bevriezing typisch bij omgevingstemperaturen in welk interval?", "options": ["-30°C tot -15°C", "-10°C tot +15°C", "+15°C tot +35°C", "0°C tot +40°C"], "correctIndex": 1, "explanation": "De cursus vermeldt expliciet: grootste kans op bevriezing is van -10° tot +15°C (Meteo, p. 10).", "difficulty": "medium"}, {"id": "met_q05", "question": "Wat is RVR in een METAR/TAF context?", "options": ["Runway Visual Range: gemeten zichtbaarheid op de landingsbaan", "Radar Vertical Resolution: hoogte-resolutie van radar", "Relative Vapor Ratio: indicator voor vochtigheid", "Runway Variable Rain: variabele neerslag op de baan"], "correctIndex": 0, "explanation": "RVR = Runway Visual Range, gemeten zichtbaarheid op de landingsbaan (Meteo, p. 36).", "difficulty": "easy"}, {"id": "met_q06", "question": "CAVOK betekent o.a. dat er geen wolken onder ongeveer welke hoogte zijn (zoals beschreven)?", "options": ["150 m", "1500 m", "4500 ft AMSL", "1500 ft AGL"], "correctIndex": 1, "explanation": "CAVOK: zichtbaarheid >10 km, geen wolken onder 1500 m en geen significante fenomenen (Meteo, p. 36).", "difficulty": "medium"}, {"id": "met_q07", "question": "In een METAR kan de windgroep worden aangevuld met 'G'. Wat duidt dit aan?", "options": ["Windvariatie in richting", "Windshear op final", "Windstotenen hun sterkte in knopen", "Gemiddelde wind over 10 minuten"], "correctIndex": 2, "explanation": "De cursus: 'G' duidt op windstoten (Gusty) en de sterkte in knopen (Meteo, p. 36).", "difficulty": "easy"}, {"id": "met_q08", "question": "Welke wolkendekking hoort bij 'BKN' ?", "options": ["0 octa", "1–2 octa", "3–4 octa", "5–7 octa"], "correctIndex": 3, "explanation": "BKN (Broken) = 5 à 7 octa’s (Meteo, p. 36).", "difficulty": "easy"}, {"id": "met_q09", "question": "Welke wolkendekking hoort bij 'OVC' ?", "options": ["8 octa", "5–7 octa", "3–4 octa", "1–2 octa"], "correctIndex": 0, "explanation": "OVC (Overcast) = 8 octa’s, volledig bewolkt (Meteo, p. 36).", "difficulty": "easy"}, {"id": "met_q10", "question": "Een TAF verschilt van METAR doordat een TAF vooral …", "options": ["enkel actuele wind en zichtbaarheid geeft, bij gelijke omstandigheden", "voorspelling is en weersveranderingen en hun snelheid aangeeft voor de komende uren", "uitsluitend wolkenhoogten boven FL100 geeft", "geen ICAO-afkortingen gebruikt, op lage hoogte"], "correctIndex": 1, "explanation": "De cursus: TAF is een voorspelling (9 uur) en geeft weersverandering en snelheid van wijziging aan (Meteo, p. 36).", "difficulty": "medium"}, {"id": "met_q11", "question": "Wat betekent 'BECMG 0810' in een TAF?", "options": ["Tijdelijk verschijnsel tussen 08-10 UTC", "Geleidelijk 'zal worden'van 08h00 tot 10h00", "Waarschijnlijkheid 80% gedurende 10 uur", "Geen significante veranderingen in de komende 2 uur"], "correctIndex": 1, "explanation": "BECMG = Becoming; in het voorbeeld: van 08h00 tot 10h00 (Meteo, p. 37).", "difficulty": "easy"}, {"id": "met_q12", "question": "Wat betekent 'NOSIG' in de TAF/METAR-code ?", "options": ["Geen significante veranderingen in de twee komende uren", "Geen signaal op de meteo-radar, in operationele context", "Geen sneeuw in de komende uren", "Geen zichtbaarheid (CAVOK), in gebruikelijke notatie"], "correctIndex": 0, "explanation": "NOSIG = geen belangrijke veranderingen in de twee komende uren (Meteo, p. 37).", "difficulty": "easy"}, {"id": "met_q13", "question": "In het TAF-voorbeeld 'PROB40 TEMPO 1316 …' betekent dit dat …", "options": ["er zeker een weersverslechtering is tussen 13–16 UTC", "er 40% kans is op een tijdelijke verandering tussen 13–16 UTC", "de zichtbaarheid 40 m is tussen 13–16 UTC", "de wind 40 kt is met tijdelijke gusts"], "correctIndex": 1, "explanation": "PROB duidt waarschijnlijkheid aan; TEMPO duidt een tijdelijke verandering in een venster (Meteo, p. 36–37).", "difficulty": "medium"}, {"id": "met_q14", "question": "Welke wolkenvolgorde wordt gekoppeld aan de nadering van een warmtefront (voor het front)?", "options": ["Cumulonimbus → altocumulus → stratocumulus", "Cirrostratus → altostratus → stratus → nimbostratus", "Stratus → cumulonimbus → cirrus", "Altocumulus → cirrus → cumulonimbus"], "correctIndex": 1, "explanation": "De cursus noemt voor warmtefront: cirrostratus, altostratus, stratus (zicht vermindert), daarna nimbostratus met neerslag (Meteo, p. 28).", "difficulty": "medium"}, {"id": "met_q15", "question": "Met welke typische snelheid verplaatst een warmtefront zich ?", "options": ["5 kt", "15 kt", "25 kt", "45 kt"], "correctIndex": 1, "explanation": "Warmtefront ≈ 15 kt (≈30 km/h) (Meteo, p. 28).", "difficulty": "easy"}, {"id": "met_q16", "question": "Met welke typische snelheid verplaatst een koufront zich ?", "options": ["10 kt", "15 kt", "25 kt", "40 kt"], "correctIndex": 2, "explanation": "Koufront ≈ 25 kt (Meteo, p. 28).", "difficulty": "easy"}, {"id": "met_q17", "question": "Welk weertype is typisch bij/na passage van een koufront?", "options": ["Altijd motregen zonder turbulentie", "Steeds neerslag en mogelijk onweer/cumulonimbus", "Altijd mist en windstilte", "Geen wolken maar sterke dalende temperatuur zonder wind"], "correctIndex": 1, "explanation": "De cursus: koude lucht duwt warme lucht snel omhoog → grote wolkenformatie; steeds neerslag en mogelijk onweer/cumulonimbus; daarna altostratus/altocumulus (Meteo, p. 28).", "difficulty": "medium"}, {"id": "met_q18", "question": "Wanneer een koufront een warmtefront inhaalt, spreekt de cursus van …", "options": ["trog", "occlusie", "inversie", "subsidentie"], "correctIndex": 1, "explanation": "Wanneer het koufront het warmtefront inhaalt: 'occlusie' (Meteo, p. 29).", "difficulty": "easy"}, {"id": "met_q19", "question": "Hoe wordt een occlusiefront op weerkaarten voorgesteld?", "options": ["Groene lijn met ruitjes, bij standaardprocedures", "Paarse lijn of lijn met afwisselend halve bol en driehoekje", "Rode lijn met driehoekjes, volgens standaarddefinities", "Blauwe lijn met halve bollen"], "correctIndex": 1, "explanation": "Occlusie: purpere lijn of afwisselend halve bol en driehoekje (Meteo, p. 29).", "difficulty": "easy"}, {"id": "met_q20", "question": "Waar ligt de meeste neerslag bij een occlusie?", "options": ["Voor het koufront", "Aan het occlusiepunt", "Steeds achter het warmtefront", "Op grote afstand van het lagedrukgebied"], "correctIndex": 1, "explanation": "De cursus: plaats waar drie fronten samen zijn = occlusiepunt; meeste neerslag daar (Meteo, p. 29).", "difficulty": "medium"}, {"id": "met_q21", "question": "In het stabiliteitsvoorbeeld: 15°C aan de grond en 12°C op 500 m. Wat doet een vrijgelaten 'luchtbel' (met 15°C) ?", "options": ["Ze blijft op dezelfde hoogte, in normale omstandigheden", "Ze daalt terug omdat ze kouder/zwaarder is dan de omgeving op 500 m", "Ze stijgt verder omdat ze warmer is dan de omgeving", "Ze condenseert onmiddellijk tot mist, bij benadering"], "correctIndex": 1, "explanation": "Bij omgevingslucht 12°C op 500 m en luchtbel 10°C (na afkoeling) is de luchtbel kouder en zwaarder → zakt terug: stabiel (Meteo, p. 22).", "difficulty": "medium"}, {"id": "met_q22", "question": "In het instabiliteitsvoorbeeld: 15°C aan de grond en 8°C op 500 m. Wat gebeurt er met de luchtbel ?", "options": ["Ze zakt terug naar beneden, in de praktijk", "Ze stijgt verder omdat ze warmer is dan de omgevingslucht", "Ze blijft precies op 500 m hangen, bij gelijkblijvende druk", "Ze draait horizontaal weg door Coriolis"], "correctIndex": 1, "explanation": "Omgeving 8°C op 500 m; luchtbel blijft warmer → blijft stijgen tot ze lagen met gelijke eigenschappen ontmoet (bv inversie): instabiel (Meteo, p. 22).", "difficulty": "medium"}, {"id": "met_q23", "question": "Welke uitspraak hoort bij stabiliteit (zoals opgesomd )?", "options": ["Grote turbulentie en zware buien", "Zachte gelijkmatige wind", "Altijd cumulonimbus en onweer", "Uitstekend zicht en rukwinden"], "correctIndex": 1, "explanation": "Kenmerken stabiliteit: zachte gelijkmatige wind, minder goed zicht, stratiforme wolken, motregen/mist, kleine turbulenties (Meteo, p. 23).", "difficulty": "easy"}, {"id": "met_q24", "question": "Welke situatie leidt typisch tot stabiliteit?", "options": ["Koude lucht stroomt over warm oppervlak (bv zee)", "Warme lucht waait over koud oppervlak", "Sterke windscheringslaag boven 5000 ft", "Altijd bij passage van een koufront"], "correctIndex": 1, "explanation": "Praktisch: warme lucht over koud oppervlak → stabiliteit (Meteo, p. 23).", "difficulty": "easy"}, {"id": "met_q25", "question": "Wat is het 'condensatieniveau' in de context van wolkenvorming?", "options": ["Het niveau waar de druk 1013,25 hPa is", "De hoogte waarop de condensatie begint en wolken ontstaan", "De hoogte waarop de wind maximaal is", "De hoogte waarop de lucht volledig droog is (RV = 0%)"], "correctIndex": 1, "explanation": "De cursus: hoogte waarop condensatie begint noemt men condensatieniveau; bij cumulus herkenbaar aan horizontale donkere onderkant (Meteo, p. 10).", "difficulty": "medium"}, {"id": "met_q26", "question": "Welke drie 'cellen' van algemene circulatie noemt de cursus (Noordelijk halfrond)?", "options": ["Hadley, Ferrel, Polar", "Walker, Brewer-Dobson, Polar", "Hadley, Monsoon, Jet", "Ferrel, ITCZ, Azoren"], "correctIndex": 0, "explanation": "De cursus somt Hadley-, Ferrel- en Polarcel op (Meteo, p. 10).", "difficulty": "easy"}, {"id": "met_q27", "question": "Welke hoogteband hoort bij de Hadley-cel (stijgen/dalen)?", "options": ["Stijgt boven evenaar en daalt rond 30° breedte", "Daalt boven evenaar en stijgt rond 60°", "Daalt aan polen en stijgt aan 60°", "Stijgt rond 30° en daalt rond 60°"], "correctIndex": 0, "explanation": "Hadleycel: stijgt boven de evenaar en daalt rond 30° breedtegraad (Meteo, p. 10).", "difficulty": "medium"}, {"id": "met_q28", "question": "Welke code duidt 'mist' aan in de lijst met fenomenen/afkortingen?", "options": ["BR", "FG", "FU", "TS"], "correctIndex": 1, "explanation": "In de afkortingen: FG = mist (Meteo, p. 36).", "difficulty": "easy"}, {"id": "nav_q01", "question": "Wat is de definitie van 'koers'?", "options": ["De hoek tussen het grondtraject en het noorden", "De hoek tussen de lengte-as van het vliegtuig en het noorden", "De afwijking tussen ware en magnetische richting", "De afwijking veroorzaakt door zijwind, bij constante temperatuur"], "correctIndex": 1, "explanation": "De cursus: koers = hoek tussen de lengte-as en het noorden; route = hoek tussen grondtraject en het noorden (Navigatie, p. 13).", "difficulty": "easy"}, {"id": "nav_q02", "question": "Wat is de definitie van 'route'?", "options": ["De hoek tussen de lengte-as van het vliegtuig en het noorden", "De hoek tussen het grondtraject en het noorden", "De kompasafwijking door metaal in het toestel", "De drifthoek door zijwind"], "correctIndex": 1, "explanation": "Route = hoek tussen het grondtraject en het noorden (Navigatie, p. 13).", "difficulty": "easy"}, {"id": "nav_q03", "question": "Welke relatie geeft de cursus voor magnetisch noorden (Nm) t.o.v. waar noorden (Nv)?", "options": ["Nm = Nv +/− variatie", "Nm = Nv +/− deviatie (d)", "Nm = Nc +/− variatie (V)", "Nm = route + drift (D)"], "correctIndex": 0, "explanation": "De cursus: Nm = Nv + of − V (Navigatie, p. 13).", "difficulty": "medium"}, {"id": "nav_q04", "question": "Welke relatie geeft de cursus voor kompasnoorden (Nc) t.o.v. magnetisch noorden (Nm)?", "options": ["Nc = Nv +/− V", "Nc = Nm +/− d", "Nc = route + drift", "Nc = koers − variatie"], "correctIndex": 1, "explanation": "De cursus: Nc = Nm + of − d (Navigatie, p. 13).", "difficulty": "medium"}, {"id": "nav_q05", "question": "Wat is een orthodroom?", "options": ["De rechte lijn op een Mercator-kaart", "De kortste verbinding tussen twee plaatsen via een grootcirkel", "Een koerslijn die alle meridianen onder dezelfde hoek snijdt", "Een route die enkel meridianen volgt"], "correctIndex": 1, "explanation": "Orthodroom = kortste verbinding via grootcirkel (Navigatie, p. 8).", "difficulty": "medium"}, {"id": "nav_q06", "question": "Wat is een loxodroom?", "options": ["De kortste grootcirkelroute, bij VFR-vluchten", "De rechte lijn op een Mercator-kaart die alle meridianen onder dezelfde hoek snijdt", "Een route die enkel parallellen volgt, op kruishoogte", "Een route die altijd gelijk is aan een meridiaan"], "correctIndex": 1, "explanation": "Loxodroom = rechte lijn op Mercator-projectie die alle meridianen onder dezelfde hoek snijdt (Navigatie, p. 8).", "difficulty": "medium"}, {"id": "nav_q07", "question": "Welke uitspraak is correct?", "options": ["De loxodroom is altijd korter dan de orthodroom", "De loxodroom is altijd langer dan de orthodroom", "De loxodroom en orthodroom zijn altijd even lang", "De orthodroom is enkel geldig boven FL100"], "correctIndex": 1, "explanation": "De cursus: De loxodroom is altijd langer dan de orthodroom (Navigatie, p. 8).", "difficulty": "easy"}, {"id": "nav_q08", "question": "Welke eigenschap van de Mercator-projectie wordt als belangrijk voor navigatie genoemd?", "options": ["Afstanden zijn overal correct, bij gelijke omstandigheden", "Hoeken op de kaart zijn even groot als in werkelijkheid en koerslijn is een rechte lijn", "Parallellen worden kromlijnen, volgens standaarddefinities", "Meridianen zijn gebogen, op lage hoogte"], "correctIndex": 1, "explanation": "Mercator: hoeken blijven behouden; koerslijn wordt rechte lijn (Navigatie, p. 8).", "difficulty": "medium"}, {"id": "nav_q09", "question": "Op een kaart met schaal 1:250.000 is 1 cm op de kaart gelijk aan … in werkelijkheid (volgens het voorbeeld ).", "options": ["250 m", "2,5 km", "25 km", "250 km"], "correctIndex": 1, "explanation": "Voorbeeld: 1 cm = 250.000 cm = 2,5 km (Navigatie, p. 9).", "difficulty": "easy"}, {"id": "nav_q10", "question": "is voor microluchtvaart in België een luchtvaartkaart 'Low Air, GND-4500 ft' op schaal … geschikt.", "options": ["1:50.000", "1:100.000", "1:250.000", "1:1.000.000"], "correctIndex": 2, "explanation": "De cursus: Low Air, GND-4500 ft, schaal 1/250.000 (Navigatie, p. 9).", "difficulty": "easy"}, {"id": "nav_q11", "question": "Wat is UTC-tijd (Universal Time Coordinated) in de context van luchtvaartnavigatie?", "options": ["Lokale tijd in België (CET/CEST)", "Tijd die gelijk is aan de lokale middag overal ter wereld", "Tijd waarbij wanneer het in Greenwich middag is", "Tijd die enkel door GPS gebruikt wordt"], "correctIndex": 2, "explanation": "Cursus: 'Wanneer het in Greenwich middag is, duiden de klokken, waar ook ter wereld, 12 h 00 aan' (Navigatie, p. 8).", "difficulty": "medium"}, {"id": "nav_q12", "question": "Waarom waarschuwt de cursus dat GPS een route aanduidt die 'geen rekening houdt met verboden gebieden'?", "options": ["GPS kan geen snelheid berekenen, in operationele context", "GPS berekent standaard de rechte lijn en negeert luchtruimbeperkingen", "GPS werkt niet boven 3000 ft, in gebruikelijke notatie", "GPS toont enkel magnetische koers"], "correctIndex": 1, "explanation": "GPS toont de rechte lijn naar coördinaten; houdt geen rekening met verboden gebieden (Navigatie, p. 14).", "difficulty": "easy"}, {"id": "nav_q13", "question": "Welke techniek wordt genoemd als hulpmiddel om snelheidsdriehoeken te vereenvoudigen?", "options": ["Sextant", "ARISTO rekenlat", "ADF", "DME"], "correctIndex": 1, "explanation": "De cursus noemt het gebruik van een ARISTO rekenlat om snelheidsdriehoeken te vereenvoudigen (Navigatie, p. 14).", "difficulty": "easy"}, {"id": "nav_q14", "question": "Welke frequentieband voor NDB wordt vermeld?", "options": ["108–118 MHz", "200–2000 kHz", "118–137 MHz", "960–1215 MHz"], "correctIndex": 1, "explanation": "NDB: frequentie tussen 200 en 2000 kHz (Navigatie, p. 14).", "difficulty": "medium"}, {"id": "nav_q15", "question": "Welke frequentieband voor VOR wordt vermeld?", "options": ["200–2000 kHz", "108–118 MHz", "118–137 MHz", "960–1215 MHz"], "correctIndex": 1, "explanation": "VOR: frequentie tussen 108 en 118 MHz (Navigatie, p. 14).", "difficulty": "medium"}, {"id": "nav_q16", "question": "De cursus vergelijkt radio-bakens met vuurtorens. Wat is het belangrijke verschil dat de cursus benadrukt?", "options": ["Radio-bakens werken enkel overdag, bij standaardprocedures", "Radio-bakens blijven bruikbaar in dichte mist of gesloten wolkendek", "Radio-bakens werken alleen onder FL50, volgens standaarddefinities", "Radio-bakens geven geen richting, enkel afstand"], "correctIndex": 1, "explanation": "Cursus: radio-bakens blijven bruikbaar in dichte mist/gesloten wolkendek (Navigatie, p. 14).", "difficulty": "easy"}, {"id": "nav_q17", "question": "Wat is een wettelijke verplichting bij het plannen van een navigatievlucht?", "options": ["Altijd IFR plannen, in normale omstandigheden", "Brandstofverbruik uitrekenen om voldoende brandstof te garanderen", "Enkel GPS gebruiken, bij benadering", "Altijd langs AWY vliegen, in normale omstandigheden"], "correctIndex": 1, "explanation": "Cursus: brandstofverbruik uitrekenen is een wettelijke verplichting (Navigatie, p. 18).", "difficulty": "easy"}, {"id": "nav_q18", "question": "staat: tijd = afstand / grondsnelheid. Wat is de kernreden om grondsnelheid 'liever te klein dan te groot' te nemen?", "options": ["Om sneller aan te komen, in de praktijk", "Om brandstofberekening conservatief te maken en reserves niet te onderschatten", "Omdat TAS altijd kleiner is dan GS, bij benadering", "Omdat wind altijd tegenwind is, bij gelijkblijvende druk"], "correctIndex": 1, "explanation": "De cursus raadt aan GS conservatief te nemen; wind kan tijd/brandstof sterk beïnvloeden (Navigatie, p. 18).", "difficulty": "medium"}, {"id": "nav_q19", "question": "De cursus geeft: 34 min vlucht aan 12 l/uur = 0,2 l/min. Hoe bekom je dit volgens decimale omzetting?", "options": ["12/34 = 0,2, bij constante temperatuur", "12 l/uur = 0,2 l/min; 34 min × 0,2 l/min", "34/60 = 0,2, bij VFR-vluchten", "12 × 34 = 0,2"], "correctIndex": 1, "explanation": "12 l/uur = 12/60 = 0,2 l/min; verbruik = minuten × liter/min (Navigatie, p. 18).", "difficulty": "hard"}, {"id": "nav_q20", "question": "Welke fasen noemt de cursus expliciet als 'aanzienlijk brandstofverbruik' naast de cruise?", "options": ["Alleen taxiën en landing", "Opwarmen, taxiën, opstijgen en circuit", "Enkel opstijgen, op lage hoogte", "Alleen daling, op kruishoogte"], "correctIndex": 1, "explanation": "De cursus somt opwarmen, taxiën, opstijgen, circuit; op bestemming circuit/eindnadering/taxi op als tijd/brandstof (Navigatie, p. 18).", "difficulty": "medium"}, {"id": "nav_q21", "question": "Bij kaartlezen: de cursus zegt dat je vaak de AIP en NOTAM moet raadplegen. Waarom?", "options": ["Omdat luchtvaartkaarten nooit laterale grenzen tonen", "Om juiste laterale grenzen enactiviteit van zones te kennen", "Omdat NOTAM enkel voor IFR is", "Omdat AIP enkel meteo bevat"], "correctIndex": 1, "explanation": "Cursus: soms AIP nodig voor juiste laterale grenzen/activiteit; NOTAM om te weten of zone actief is (Navigatie, p. 11).", "difficulty": "medium"}, {"id": "nav_q22", "question": "Welke AIP-hoofdstukken worden genoemd voor specifieke kaarten die makkelijker lezen dan de totale kaart?", "options": ["GEN 1.1 en AD 2", "ENR 5.1, 5.2, 5.3 en ENR 6", "ENR 1.2 en ENR 1.3", "AD 1 en AD 3"], "correctIndex": 1, "explanation": "De cursus verwijst naar ENR 5.1/5.2/5.3 en ENR 6 Charts (Navigatie, p. 11).", "difficulty": "hard"}, {"id": "nav_q23", "question": "Wat betekent de notatie 'Brussels CTR 1500 ft AMSL D' (op de oefenlijst)?", "options": ["CTR tot FL150, klasse D", "CTR met bovengrens 1500 ft AMSL, luchtruimklasse D", "TMA met ondergrens 1500 ft AMSL, klasse D", "Verboden gebied tot 1500 ft AMSL"], "correctIndex": 1, "explanation": "De oefenlijst toont expliciet 'Brussels CTR 1500 ft AMSL D' (Navigatie, p. 11).", "difficulty": "medium"}, {"id": "nav_q24", "question": "is bij Zuid–Noord verplaatsing (zelfde lengte) de afstand in nautische mijl gelijk aan …", "options": ["aantal graden lengte × 60", "aantal graden breedte in minuten", "aantal graden breedte × 1852", "aantal minuten lengte × 1,852"], "correctIndex": 1, "explanation": "Cursus: bij langs een meridiaan: elke minuut breedte = 1 Nautical Mile (Navigatie, p. 8).", "difficulty": "hard"}, {"id": "nav_q25", "question": "In het voorbeeld van de cursus: 793' wordt omgezet naar afstand door …", "options": ["793 × 1,852 km = 1468,63 km", "793 × 1852 km = 1468,63 km", "793 × 0,1852 km = 146,863 km", "793 / 1,852 km = 428,2 km"], "correctIndex": 0, "explanation": "Cursusvoorbeeld: 793' × 1,852 km = 1468,63 km (Navigatie, p. 8).", "difficulty": "hard"}, {"id": "nav_q26", "question": "Welke uitspraak over 'lokale vluchtkegels' (wegen volgen) is correct?", "options": ["Het voorkomt afdrijven door wind volledig", "Het werkt alleen bij windstilte", "Het vereist altijd GPS", "Het is verboden in België"], "correctIndex": 0, "explanation": "Cursus: met wegen volgen heb je geen kans om verloren te vliegen door afdrijven; zelfs bij sterke wind kan je navigatie uitvoeren (Navigatie, p. 18).", "difficulty": "medium"}, {"id": "nav_q27", "question": "Waarom zegt de cursus dat bij weinig bruikbare wegen een kompaskoers en eventueel snelheidsdriehoeken nodig zijn?", "options": ["Omdat Mercatorprojectie dan niet werkt, in de praktijk", "Omdat je anders geen betrouwbare visuele referenties hebt en drift moet compenseren", "Omdat NDB/VOR niet beschikbaar zijn, in gebruikelijke notatie", "Omdat je dan IFR moet vliegen, bij gelijke omstandigheden"], "correctIndex": 1, "explanation": "Cursus: wanneer te weinig bruikbare wegen → gebied overvliegen met kompaskoers; drift corrigeren met snelheidsdriehoeken (Navigatie, p. 18).", "difficulty": "hard"}, {"id": "pv_q01", "question": "Welke vier krachten worden genoemd die op een vliegtuig in rechte horizontale vlucht werken?", "options": ["Lift, gewicht, weerstand, trekkracht", "Lift, gewicht, stuwkracht, moment", "Gewicht, brandstof, lift, turbulentie", "Sleep, massa, druk, trekkracht"], "correctIndex": 0, "explanation": "De cursus noemt: gewicht (G), lift (L), sleep (S) en trekkracht (T) (Principes van het vliegen, p. 11).", "difficulty": "easy"}, {"id": "pv_q02", "question": "Welke uitspraak is correct voor rechtlijnige horizontale vlucht ?", "options": ["Lift = sleep en trekkracht = gewicht", "Lift compenseert gewicht en trekkracht compenseert sleep", "Trekkracht compenseert gewicht en lift compenseert sleep", "Alle krachten zijn nul"], "correctIndex": 1, "explanation": "Evenwicht: lift compenseert gewicht; trekkracht compenseert sleep (Principes van het vliegen, p. 11).", "difficulty": "easy"}, {"id": "pv_q03", "question": "Wat gebeurt er als de trekkracht groter wordt dan de sleep (alle andere factoren gelijk)?", "options": ["Het vliegtuig daalt", "Het vliegtuig versnelt", "Het vliegtuig maakt altijd een bocht", "De lift verdwijnt"], "correctIndex": 1, "explanation": "Cursus: als trekkracht groter is dan sleep, zal het vliegtuig versnellen (Principes van het vliegen, p. 11).", "difficulty": "easy"}, {"id": "pv_q04", "question": "Wat is de relatie tussen lift en relatieve wind wanneer de relatieve wind verdubbelt (andere factoren gelijk)?", "options": ["Lift halveert", "Lift blijft gelijk", "Lift verdubbelt", "Lift verviervoudigt"], "correctIndex": 3, "explanation": "Cursus: bij verdubbelen van relatieve wind zullen lift en weerstand verviervoudigen (Principes van het vliegen, p. 13).", "difficulty": "medium"}, {"id": "pv_q05", "question": "Welke van onderstaande is een component van de aerodynamische resultante (AR)?", "options": ["Gewicht", "Lift", "Trekkracht", "Brandstofverbruik"], "correctIndex": 1, "explanation": "Cursus: S en L zijn de componenten van de aerodynamische resultante AR (Principes van het vliegen, p. 11).", "difficulty": "medium"}, {"id": "pv_q06", "question": "Wat betekent 'geïnduceerde weerstand' in aerodynamische context?", "options": ["Weerstand door romp en onderstel", "Weerstand eigen aan het opwekken van draagkracht", "Weerstand door luchtdeeltjes die tegen de vleugel botsen", "Weerstand door ijsvorming"], "correctIndex": 1, "explanation": "De cursus vermeldt geïnduceerde weerstand als weerstand eigen aan het opwekken van draagkracht (Principes van het vliegen, p. 11).", "difficulty": "medium"}, {"id": "pv_q07", "question": "Welke formule voor lift wordt gegeven?", "options": ["L = ρ·S·V·Cl", "L = 1/2·ρ·S·V²·Cl", "L = m·g·V", "L = p·A"], "correctIndex": 1, "explanation": "De cursus geeft L = 1/2 · ρ · S · V² · Cl (Principes van het vliegen, p. 14).", "difficulty": "easy"}, {"id": "pv_q08", "question": "Welke twee parameters kan de piloot (bij eenvoudige toestellen) tijdens de vlucht rechtstreeks wijzigen om lift te beïnvloeden?", "options": ["Soortelijke massa en vleugeloppervlak", "Snelheid en invalshoek", "Vleugeloppervlak en profiel", "Gewicht en zwaartepunt"], "correctIndex": 1, "explanation": "Cursus: piloot kan tijdens vlucht vooral snelheid en invalshoek wijzigen (Principes van het vliegen, p. 14).", "difficulty": "medium"}, {"id": "pv_q09", "question": "Wat is de invaishoek?", "options": ["De hoek tussen de vleugelspanwijdte en het noorden", "De hoek tussen relatieve wind en de koorde van het profiel", "De hoek tussen koers en route", "De hoek tussen lift en gewicht"], "correctIndex": 1, "explanation": "Cursus: invaishoek wordt gevormd door relatieve wind en koorde van het profiel (Principes van het vliegen, p. 11).", "difficulty": "easy"}, {"id": "pv_q10", "question": "Wat gebeurt er met de draagkracht wanneer de invaishoek steeds groter gemaakt wordt voorbij een bepaalde grens?", "options": ["De draagkracht blijft stijgen, in operationele context", "De draagkracht blijft constant", "De draagkracht neemt af en kan plots verdwijnen", "De draagkracht wordt negatief, bij standaardprocedures"], "correctIndex": 2, "explanation": "Cursus: vanaf bepaalde invaishoek zal draagkracht afnemen en plots verdwijnen: overtrokken/afgehaakt (Principes van het vliegen, p. 13–14).", "difficulty": "easy"}, {"id": "pv_q11", "question": "Wat is VNE ?", "options": ["De snelheid voor minimale daalsnelheid", "De maximum nooit te overschrijden snelheid", "De best-glide snelheid", "De stall snelheid in bocht"], "correctIndex": 1, "explanation": "Cursus: VNE = Never Exceed, maximum nooit te overschrijden snelheid (Principes van het vliegen, p. 15 & p. 19).", "difficulty": "easy"}, {"id": "pv_q12", "question": "Wat is VS ?", "options": ["De windstilte snelheid, volgens standaarddefinities", "De overtreksnelheidwaarbij afhakingsgevaar bestaat", "De snelheid voor beste fijnheid, in normale omstandigheden", "De snelheid voor maximale stuwkracht"], "correctIndex": 1, "explanation": "Cursus: VS = Stall, overtreksnelheid (Principes van het vliegen, p. 15 & p. 19).", "difficulty": "easy"}, {"id": "pv_q13", "question": "Welke uitspraak over VS is correct?", "options": ["VS is constant en verandert niet met omstandigheden", "VS verandert met o.a. gewicht, turbulentie en bochten", "VS is altijd gelijk aan VNE/2", "VS hangt enkel van luchtdruk af"], "correctIndex": 1, "explanation": "Cursus: VS verandert met omstandigheden zoals gewicht, turbulent weer, bochten (Principes van het vliegen, p. 15).", "difficulty": "medium"}, {"id": "pv_q14", "question": "staat: VS in de bocht = VS in rechte lijn × √g. Wat is VS in een bocht van 60° bij VS rechtlijnig 62 km/h (zoals het voorbeeld)?", "options": ["62 km/h", "75 km/h", "87,7 km/h", "124 km/h"], "correctIndex": 2, "explanation": "Voor 60° is g-factor 2 en √2 = 1,414. 62 × 1,414 = 87,66 km/h (Principes van het vliegen, p. 22).", "difficulty": "hard"}, {"id": "pv_q15", "question": "Wat is de belastingsfactor (g) bij 60° inclinatie volgens de tabel ?", "options": ["1,0", "1,15", "1,5", "2,0"], "correctIndex": 3, "explanation": "In de tabel: 60° inclinatie → belastingsfactor 2 (Principes van het vliegen, p. 22).", "difficulty": "medium"}, {"id": "pv_q16", "question": "Welke structurele weerstand (factor van uiterste last) moeten ULM's kunnen verdragen om een beperkte toelating te krijgen?", "options": ["+3 en -1", "+4 en -2", "+6 en -3", "+9 en -3"], "correctIndex": 2, "explanation": "De cursus: ULM’s moeten +6 en -3 kunnen verdragen (Principes van het vliegen, p. 22).", "difficulty": "medium"}, {"id": "pv_q17", "question": "Een ULM weegt vliegbaar 450 daN. Welke uiterste last moet het kunnen weerstaan bij +6g?", "options": ["900 daN", "1800 daN", "2700 daN", "5400 daN"], "correctIndex": 2, "explanation": "6 × 450 daN = 2700 daN (Principes van het vliegen, p. 22).", "difficulty": "hard"}, {"id": "pv_q18", "question": "Wat is 'schijnbaar gewicht' in de context van g-krachten ?", "options": ["Het werkelijke gewicht verminderd door massa, bij gelijkblijvende druk", "De aflezing op een weegschaal die kan variëren door versnellingenterwijl echt gewicht gelijk blijft", "Het gewicht in Newton gedeeld door g, bij benadering", "De massa van de piloot inclusief uitrusting, in de praktijk"], "correctIndex": 1, "explanation": "Cursus: schijnbaar gewicht zijn aflezingen die veranderen door versnelling; kan positief/negatief; echt gewicht blijft gelijk (Principes van het vliegen, p. 22).", "difficulty": "medium"}, {"id": "pv_q19", "question": "Wat is het doel van 'minimale daalsnelheid' uit de polaire?", "options": ["Zo ver mogelijk zweven per hoogte", "Zo lang mogelijk in de lucht blijven", "De hoogste snelheid bereiken", "De laagste VS vinden"], "correctIndex": 1, "explanation": "Cursus: minimale daalsnelheid → zo lang mogelijk in de lucht blijven (Principes van het vliegen, p. 19).", "difficulty": "easy"}, {"id": "pv_q20", "question": "Wat is het doel van 'beste glijgetal / beste fijnheid' uit de polaire?", "options": ["Zo lang mogelijk in de lucht blijven", "Zo ver mogelijk wegzweven met gegeven hoogte", "De kortste landingsafstand", "De grootste stijgsnelheid"], "correctIndex": 1, "explanation": "Cursus: beste fijnheid → met gegeven hoogte zo ver mogelijk wegzweven (Principes van het vliegen, p. 19).", "difficulty": "easy"}, {"id": "pv_q21", "question": "Welke uitspraak over de polaire is correct?", "options": ["De kleinste daalsnelheid valt samen met de laagste vliegsnelheid", "De polaire is geldig voor zweefvlucht in rechte lijn en windstilte", "De polaire is onafhankelijk van het type ULM", "De polaire geldt alleen bij motorvermogen"], "correctIndex": 1, "explanation": "Cursus: polaire geldig voor zweefvlucht in rechte lijn en windstilte; elke ULM heeft eigen polaire (Principes van het vliegen, p. 19).", "difficulty": "medium"}, {"id": "pv_q22", "question": "Wat gebeurt er wanneer de piloot in horizontale vlucht het motorregime verhoogt zonder aan de stuurorganen te komen?", "options": ["Het toestel versnelt maar blijft exact op dezelfde hoogte", "Lift en sleep nemen toe en het toestel zal stijgen", "Het toestel daalt door hogere weerstand", "De invaishoek wordt automatisch kleiner waardoor het toestel daalt"], "correctIndex": 1, "explanation": "Cursus: meer snelheid → hogere relatieve wind → lift en sleep nemen toe → toestel stijgt tenzij piloot invalshoek verkleint (Principes van het vliegen, p. 15).", "difficulty": "hard"}, {"id": "pv_q23", "question": "Om na een vermogensverhoging op dezelfde hoogte te blijven, moet de piloot …", "options": ["de invalshoek vergroten", "de invalshoek verkleinen", "de snelheid verminderen", "de liftcoëfficiënt verhogen door lucht zwaarder te maken"], "correctIndex": 1, "explanation": "Cursus: om niet te stijgen bij toegenomen snelheid moet invalshoek kleiner gemaakt worden (Principes van het vliegen, p. 15).", "difficulty": "medium"}, {"id": "pv_q24", "question": "Welke combinatie geeft het best weer waarom men de snelheid niet onbeperkt kan verhogen?", "options": ["Omdat de lucht altijd ijler wordt op lage hoogte", "Omdat de krachten op de vleugel zo groot kunnen worden dat vervorming/beschadiging optreedt", "Omdat Cl altijd afneemt bij hogere snelheid, bij constante temperatuur", "Omdat gewicht dan verdwijnt, bij gelijkblijvende druk"], "correctIndex": 1, "explanation": "Cursus: te hoge snelheid kan structuur vleugel vervormen/beschadigen; dat is VNE-limiet (Principes van het vliegen, p. 15).", "difficulty": "medium"}, {"id": "pv_q25", "question": "Welke factor verlaagt de draagkracht (lift) bij gelijkblijvende snelheid, oppervlak en invalshoek?", "options": ["Hogere soortelijke massa van lucht", "Ijler wordende lucht, bv bij stijgen", "Groter vleugeloppervlak", "Grotere profielkromming"], "correctIndex": 1, "explanation": "Cursus: hoe ijler de lucht, hoe minder draagkracht; lucht wordt ijler naarmate men stijgt (Principes van het vliegen, p. 13).", "difficulty": "medium"}, {"id": "pv_q26", "question": "Wat is een praktische interpretatie van 'grote vleugeloppervlakken'?", "options": ["Ze vereisen altijd hogere snelheid, op kruishoogte", "Ze laten toe trager te vliegen of grotere lasten op te tillen", "Ze verminderen lift, bij VFR-vluchten", "Ze verhogen uitsluitend profielweerstand"], "correctIndex": 1, "explanation": "Cursus: grote vleugeloppervlakken laten toe trager te vliegen of grote lasten op te tillen (Principes van het vliegen, p. 13).", "difficulty": "easy"}, {"id": "pv_q27", "question": "Bij het vliegen van een bocht: welke krachtcomponent zorgt voor de koersverandering (centripetaal effect)?", "options": ["Verticale component van K", "Horizontale component van K gericht naar het middelpunt van de draaicirkel", "Gewicht G, bij gelijke omstandigheden", "Sleep S, op lage hoogte, bij constante temperatuur"], "correctIndex": 1, "explanation": "Cursus: ontbinding K: verticale component compenseert G; horizontale component naar middelpunt verandert richting (Principes van het vliegen, p. 20).", "difficulty": "hard"}, {"id": "pv_q28", "question": "Waarom moet bij 60° inclinatie de lift verdubbelen om dezelfde hoogte te behouden?", "options": ["Omdat gewicht halveert, in gebruikelijke notatie", "Omdat de verticale component van lift kleiner wordt", "Omdat sleep verdubbelt, in operationele context", "Omdat trekkracht nul wordt"], "correctIndex": 1, "explanation": "Cursus: bij 60° inclinatie moet lift verdubbelen om verticale component gelijk aan gewicht te houden; g-factor 2 (Principes van het vliegen, p. 22).", "difficulty": "hard"}, {"id": "reg_q01", "question": "Waarvoor staat de afkorting AIP en welke reden wordt gegeven voor het bestaan ervan?", "options": ["Airport Inspection Program; om brandstofprijzen te publiceren", "Aeronautical Information Publication", "Airspace Information Protocol; om ADS-B te standaardiseren", "Aeronautical Inspection Procedures; om toestellen te certificeren"], "correctIndex": 1, "explanation": "De cursus: AIP = Aeronautical Information Publication; ICAO (Chicago 1944) publiceert basisreglementering; staten voegen nationale voorschriften toe, gepubliceerd in AIP (Reglementering, p. 5).", "difficulty": "medium"}, {"id": "reg_q02", "question": "Welke drie grote hoofdstukken van de AIP worden opgesomd?", "options": ["MET, NAV, OPS", "GEN, ENR, AD", "CTR, TMA, FIR", "VFR, IFR, SVFR"], "correctIndex": 1, "explanation": "Cursus: AIP bevat GEN (Generalities), ENR (En Route), AD (Aerodromes) (Reglementering, p. 5–6).", "difficulty": "easy"}, {"id": "reg_q03", "question": "Wat betekent NOTAM ?", "options": ["Notice To Air Mission", "NOtice To AirMan", "Notification To Airline Management", "North Atlantic Message"], "correctIndex": 1, "explanation": "Cursus: NOTAM komt van NOtice To AirMan (Reglementering, p. 6).", "difficulty": "easy"}, {"id": "reg_q04", "question": "Welke basisstructuur heeft een NOTAM ?", "options": ["Vier letters + drie cijfers + datum", "Een letter", "Twee letters + FL + tijd", "ICAO code + QNH"], "correctIndex": 1, "explanation": "Cursus: elke NOTAM begint met een letter, vier cijfers, breukstreep en nog twee cijfers (Reglementering, p. 6).", "difficulty": "medium"}, {"id": "reg_q05", "question": "waar slaat de eerste letter in een NOTAM o.a. op (voorbeeld B/E/F/M/Z)?", "options": ["Op de intensiteit van de wind, bij standaardprocedures", "Voor wie/waarvoor de NOTAM van toepassing is", "Op de duur van de NOTAM in uren, volgens standaarddefinities", "Op de betrokken vliegtuigklasse"], "correctIndex": 1, "explanation": "Cursus: letter duidt voor wie/gebied; vb B private luchthavens, E comm/nav, F buiten gecontroleerd luchtruim <4500 ft AMSL, M militairen, Z vogels (Reglementering, p. 6).", "difficulty": "hard"}, {"id": "reg_q06", "question": "Wat betekenen de vier cijfers in een NOTAM ?", "options": ["De hoogte in voet, in normale omstandigheden", "Een volgnummer dat elk jaar opnieuw op nul begint", "De ICAO-luchthaven in cijfers", "Het aantal dagen geldigheid, bij benadering"], "correctIndex": 1, "explanation": "Cursus: 4 cijfers = volgnummer dat elk jaar weer op nul herbegint (Reglementering, p. 6).", "difficulty": "medium"}, {"id": "reg_q07", "question": "Wat betekenen de laatste twee cijfers in een NOTAM ?", "options": ["Maand van uitgifte", "Dag van uitgifte", "Jaartal", "Uur van uitgifte"], "correctIndex": 2, "explanation": "Cursus: laatste twee cijfers duiden op het jaartal (Reglementering, p. 6).", "difficulty": "medium"}, {"id": "reg_q08", "question": "Wat moet de gezagvoerder vóór aanvang van een vlucht zeker doen (buiten nabijheid van het veld)?", "options": ["Alleen de windzak bekijken, bij gelijkblijvende druk", "De meest actuele weerberichten/verwachtingen bestuderen en aandacht besteden aan brandstof en alternatieve koers", "Enkel een GPS-route laden, in de praktijk", "Altijd met ATC bellen voor een clearance, bij VFR-vluchten"], "correctIndex": 1, "explanation": "Cursus: voorafgaande actie omvat studie actuele weerberichten/verwachtingen; aandacht voor brandstof en alternatieve koers (Reglementering, p. 10).", "difficulty": "medium"}, {"id": "reg_q09", "question": "Welke uitspraak over kunstvluchten is correct?", "options": ["Altijd toegestaan boven open veld", "Niet toegestaan tenzij in VMC en op minstens 600 m boven de grond", "Toegestaan in IMC als men IFR vliegt", "Toegestaan in gecontroleerd luchtruim zonder toelating"], "correctIndex": 1, "explanation": "Cursus: kunstvluchten enkel in VMC en op ten minste 600 m boven de grond; lagere hoogte enkel met toelating (Reglementering, p. 10).", "difficulty": "medium"}, {"id": "reg_q10", "question": "Vluchten in formatie zijn enkel toegestaan als …", "options": ["het nacht is en er een vliegplan is", "in VMC en er vooraf een overeenkomst is tussen de gezagvoerders", "er een NOTAM actief is, bij constante temperatuur", "men boven FL100 vliegt, bij VFR-vluchten"], "correctIndex": 1, "explanation": "Cursus: formatievlucht enkel in VMC en mits voorafgaande overeenkomst tussen gezagvoerders (Reglementering, p. 11).", "difficulty": "medium"}, {"id": "reg_q11", "question": "Wat zegt de cursus over opstijgen en landen in formatie?", "options": ["Altijd toegestaan", "Altijd verboden", "Toegestaan enkel voor ULM klasse 1", "Toegestaan als er geen wind is"], "correctIndex": 1, "explanation": "Cursus: landen/opstijgen in formatie verboden tenzij DG Luchtvaart toelating geeft (Reglementering, p. 11).", "difficulty": "medium"}, {"id": "reg_q12", "question": "Wat zegt de cursus over formatievluchten met betalende passagiers?", "options": ["Toegestaan bij dag in klasse G", "Verboden", "Toegestaan mits NOTAM", "Toegestaan enkel boven 600 m AGL"], "correctIndex": 1, "explanation": "Cursus: formatievluchten met betalende passagiers is verboden (Reglementering, p. 11).", "difficulty": "easy"}, {"id": "reg_q13", "question": "Wat is QFE in het hoofdstuk 'hoogtemeter instelling'?", "options": ["Luchtdruk op zeeniveau (MSL) voor het veld", "Luchtdruk ter hoogte van de startbaan", "Standaarddruk 1013,25 hPa", "Luchtdruk in het toestel gemeten door pitot"], "correctIndex": 1, "explanation": "Cursus: QFE = luchtdruk ter hoogte van de startbaan; instellen op nul → hoogte boven startbaan (Reglementering, p. 12).", "difficulty": "medium"}, {"id": "reg_q14", "question": "Wat moet een gezagvoerder doen bij een noodlanding buiten een erkend terrein (behoudens overmacht) ?", "options": ["Onmiddellijk terug opstijgen als het toestel intact is", "ATS verwittigen", "Enkel een NOTAM publiceren", "Alleen de lokale burgemeester verwittigen"], "correctIndex": 1, "explanation": "Cursus somt meldingen (ATS/politie/douane) en verbod op heropstijgen zonder DG Luchtvaart op (Reglementering, p. 11).", "difficulty": "hard"}, {"id": "reg_q15", "question": "Welke uitspraak over VFR in klasse A is correct?", "options": ["VFR is toegestaan met 5 km zicht", "VFR is verboden", "VFR is toegestaan alleen met Special VFR", "VFR is toegestaan alleen onder FL100"], "correctIndex": 1, "explanation": "Cursus: VFR vluchten in luchtruim klasse A zijn verboden (Reglementering, p. 24–25).", "difficulty": "easy"}, {"id": "reg_q16", "question": "Onder welke voorwaarden kan de zichtbaarheid in vlucht herleid worden tot 1500 m?", "options": ["Altijd, zolang men 1000 ft boven wolken blijft", "IAS 140 kt of lager én mogelijkheid om tijdig ander verkeer te zien/ontwijken", "Alleen in klasse D, op kruishoogte, op kruishoogte", "Alleen voor helikopters, op lage hoogte"], "correctIndex": 1, "explanation": "Cursus: zichtbaarheid kan herleid tot 1500 m onder omstandigheden: IAS ≤140 kt en mogelijkheid tot see-and-avoid en weinig ander verkeer (Reglementering, p. 24–25).", "difficulty": "hard"}, {"id": "reg_q17", "question": "Welke minima worden gegeven voor VFR nabij een luchtvaartterrein (zonder special VFR)?", "options": ["Zichtbaarheid ≥ 1500 m en wolkenbasis ≥ 500 ft", "Zichtbaarheid op de grond > 5 km en wolkenbasis ≥ 1500 ft", "Zichtbaarheid ≥ 8 km en wolkenbasis ≥ 3000 ft", "Zichtbaarheid ≥ 10 km en wolkenbasis ≥ 2000 ft"], "correctIndex": 1, "explanation": "Cursus: nabij terrein: zichtbaarheid op de grond beter dan 5 km; wolkenbasis gelijk of hoger dan 1500 ft (Reglementering, p. 25–26).", "difficulty": "medium"}, {"id": "reg_q18", "question": "Wat is de verplichting voor VFR-nachtvluchten (samengevat)?", "options": ["Altijd verboden in België", "Toegestaan mits o.a. vliegplan en radioverbinding met ATS", "Toegestaan zonder radio als men onder 3000 ft blijft", "Alleen toegestaan met transponder Mode S"], "correctIndex": 1, "explanation": "Cursus: VFR ‘s nachts kan toegestaan worden onder voorwaarden zoals vliegplan (bij verwijderen) en radioverbinding met ATS (Reglementering, p. 26).", "difficulty": "hard"}, {"id": "reg_q19", "question": "Welke luchtruimklasse beschrijft de cursus als: 'Scheiding: niet voorzien; verkeersleiding: enkel Flight Information Service; radio niet verplicht'?", "options": ["Klasse C", "Klasse D", "Klasse E", "Klasse G"], "correctIndex": 3, "explanation": "Cursus: klasse G → geen scheiding; enkel FIS; radio niet verplicht; clearance niet vereist (Reglementering, p. 23).", "difficulty": "medium"}, {"id": "reg_q20", "question": "Wat adviseert de cursus m.b.t. militaire CTR’s/TMA’s buiten openingsuren?", "options": ["Vrij doorvliegen zonder beperkingen", "Niet overvliegen binnen straal 2 NM tot 2500 ft AMSL", "Altijd IFR vragen, bij gelijke omstandigheden", "Alleen boven FL195 vliegen, in gebruikelijke notatie"], "correctIndex": 1, "explanation": "Cursus: buiten openingsuren niet overvliegen binnen 2 NM tot 2500 ft AMSL, tenzij toelating Ministerie Landsverdediging (Reglementering, p. 23).", "difficulty": "hard"}, {"id": "reg_q21", "question": "Wat vermeldt de cursus over het R-gebied i.v.m. QRA (Kleine Brogel/Florennes)?", "options": ["Altijd actief: straal 2 NM, van GND tot FL95, verboden", "Actief enkel overdag: straal 5 NM tot FL65", "Enkel voor IFR: van FL100 tot FL195, bij standaardprocedures", "Niet van toepassing in België, in operationele context"], "correctIndex": 0, "explanation": "Cursus: QRA → R-gebied altijd verboden, straal 2 NM, GND tot FL95 (Reglementering, p. 23–24).", "difficulty": "hard"}, {"id": "reg_q22", "question": "Wat is verboden m.b.t. uitwerpen van voorwerpen of verstuiven?", "options": ["Altijd toegestaan boven open veld", "Verboden tenzij met toelating van DG Luchtvaart", "Toegestaan mits NOTAM, volgens standaarddefinities", "Toegestaan onder 3000 ft AGL, in normale omstandigheden"], "correctIndex": 1, "explanation": "Cursus: uitwerpen/verstuiven verboden tenzij toelating DG Luchtvaart (Reglementering, p. 10).", "difficulty": "medium"}, {"id": "reg_q23", "question": "Welke leeftijd moet een aanvrager minstens bereikt hebben om een ULM-vergunning te verkrijgen?", "options": ["14 jaar", "16 jaar", "17 jaar", "18 jaar"], "correctIndex": 1, "explanation": "Cursus: om ULM vergunning te verkrijgen moet aanvrager 16 jaar bereikt hebben (Reglementering, p. 72).", "difficulty": "easy"}, {"id": "reg_q24", "question": "Welke examens moeten o.a. met goed gevolg worden afgelegd voor de ULM-vergunning (theoretisch examen)?", "options": ["Alleen meteorologie en navigatie", "Algemene materies luchtvaartwetgeving", "Alleen techniek van het vliegen", "Enkel radio-telefonie"], "correctIndex": 1, "explanation": "Cursus noemt de onderwerpen van het theoretisch examen voor ULM-vergunning (Reglementering, p. 72).", "difficulty": "medium"}, {"id": "reg_q25", "question": "Welke medische vereiste wordt vermeld voor de leerling-piloot vóór de eerste solo?", "options": ["Geen medisch certificaat vereist voor ULM", "Geldig medisch certificaat klasse 1", "Enkel een zelfverklaring", "Alleen klasse 4"], "correctIndex": 1, "explanation": "Cursus: leerling-piloot moet houder zijn van geldig medisch certificaat klasse 1, 2 of LAPL vóór eerste solo (Reglementering, p. 72).", "difficulty": "hard"}, {"id": "reg_q26", "question": "wat is de hoofdregel m.b.t. 'onder invloed' voor stuurpersoneel?", "options": ["Toegestaan tot 0,5‰ alcohol, bij benadering, op lage hoogte", "Verboden deel uit te maken van stuurpersoneel onder invloed van alcohol of slaap-/verdovende middelen", "Toegestaan bij lokaal circuit, in de praktijk", "Toegestaan als er een instructeur aan boord is"], "correctIndex": 1, "explanation": "Cursus: verboden deel uit te maken van stuurpersoneel onder invloed van alcohol/slaapwekkende/verdovende middelen (Reglementering, p. 10).", "difficulty": "easy"}, {"id": "reg_q27", "question": "Wat zegt de cursus over landen met een burgerluchtvaartuig op een militair terrein (tenzij dringende noodzaak)?", "options": ["Altijd toegestaan met radio, bij constante temperatuur", "Niet zonder voorafgaande toelating van de Generale Staf van de Luchtcomponent", "Alleen toegestaan onder FL95, bij gelijke omstandigheden", "Toegestaan mits NOTAM, bij gelijkblijvende druk"], "correctIndex": 1, "explanation": "Cursus: tenzij dringende noodzaak mag niet geland worden op militair terrein zonder voorafgaande toelating (Reglementering, p. 10).", "difficulty": "hard"}, {"id": "met_q29", "question": "Je staat met je rug naar de wind op het noordelijk halfrond. Waar bevindt het lagedrukgebied zich?", "options": ["Links", "Rechts", "Voor je", "Achter je"], "correctIndex": 0, "explanation": "Wet van Buys-Ballot: met de rug naar de wind ligt de lage druk links (Meteo, p. 12).", "difficulty": "medium"}, {"id": "met_q30", "question": "In welke richting wordt bewegende lucht op het noordelijk halfrond door het Corioliseffect afgebogen?", "options": ["Naar links", "Naar rechts", "Naar boven", "Naar beneden"], "correctIndex": 1, "explanation": "Op het noordelijk halfrond buigt lucht door Coriolis naar rechts af (Meteo, p. 12).", "difficulty": "easy"}, {"id": "met_q31", "question": "Wat betekent het wanneer isobaren op een weerkaart dicht bij elkaar liggen?", "options": ["Zwakke drukgradiënt en zwakke wind", "Sterke drukgradiënt en sterke wind", "Altijd mist", "Altijd onweer"], "correctIndex": 1, "explanation": "Kleine afstand tussen isobaren = sterke drukgradiënt → hogere windsnelheid (Meteo, p. 12).", "difficulty": "medium"}, {"id": "met_q32", "question": "Hoe wordt windrichting in meteorologie/aviatie doorgaans uitgedrukt?", "options": ["In de richting waarheen de wind waait", "In de richting waarvandaan de wind komt", "Altijd t.o.v. magnetisch noorden", "Altijd t.o.v. ware koers van het vliegtuig"], "correctIndex": 1, "explanation": "Windrichting wordt aangeduid als richting waarvandaan de wind komt (Meteo, p. 13).", "difficulty": "easy"}, {"id": "met_q33", "question": "Welke eenheid wordt in de luchtvaart het meest gebruikt voor windsnelheid?", "options": ["m/s", "km/h", "knoop", "mph"], "correctIndex": 2, "explanation": "De cursus vermeldt knopen (kt) als gebruikelijke eenheid in de luchtvaart (Meteo, p. 13).", "difficulty": "easy"}, {"id": "met_q34", "question": "Welke situatie veroorzaakt typisch turbulentie door een 'brutale richtingsverandering' van de luchtstroom?", "options": ["Laminaire wind over vlakke zee", "Wind die achter een gebouw/loods afschuift", "Stralingsafkoeling 's nachts", "Subsidentie in een hogedrukgebied"], "correctIndex": 1, "explanation": "Voorbeeld in de cursus: laminaire wind over vlakte met loods → achter/rondom loods turbulentie (Meteo, p. 16).", "difficulty": "medium"}, {"id": "met_q35", "question": "Wat beschrijft een 'windgradient' dicht bij het aardoppervlak het best?", "options": ["Wind neemt toe met dalende hoogte door Coriolis", "Wind verandertmet hoogte door wrijving nabij de grond", "Wind is overal constant in de troposfeer", "Wind wordt uitsluitend bepaald door temperatuur"], "correctIndex": 1, "explanation": "De cursus bespreekt 'gradient' als opeenstapeling van luchtlagen waarbij wrijving nabij de grond de wind beïnvloedt (Meteo, p. 16).", "difficulty": "hard"}, {"id": "met_q36", "question": "Wat betekent 'ruimen' van de wind (veering) op het noordelijk halfrond?", "options": ["Wind draait tegen de klok in", "Wind draait met de klok mee", "Wind neemt altijd in snelheid toe", "Wind neemt altijd in snelheid af"], "correctIndex": 1, "explanation": "Ruimen = draaien met de klok mee (veering) (Meteo, p. 16).", "difficulty": "medium"}, {"id": "met_q37", "question": "Wat betekent 'krimpen' van de wind (backing) op het noordelijk halfrond?", "options": ["Wind draait met de klok mee", "Wind draait tegen de klok in", "Wind wordt laminar", "Wind wordt altijd turbulenter"], "correctIndex": 1, "explanation": "Krimpen = draaien tegen de klok in (backing) (Meteo, p. 16).", "difficulty": "medium"}, {"id": "met_q38", "question": "Bij zeebries overdag waait de wind typisch …", "options": ["Van land naar zee", "Van zee naar land", "Altijd parallel aan de kust", "Altijd windstil"], "correctIndex": 1, "explanation": "Zeebries (dag): koelere lucht van zee stroomt naar warmer land (Meteo, p. 31).", "difficulty": "easy"}, {"id": "met_q39", "question": "Bij landbries 's nachts waait de wind typisch …", "options": ["Van zee naar land", "Van land naar zee", "Altijd loodrecht op isobaren", "Altijd met rukwinden"], "correctIndex": 1, "explanation": "Landbries (nacht): land koelt sneller af, lucht stroomt van land naar zee (Meteo, p. 31–32).", "difficulty": "easy"}, {"id": "met_q40", "question": "Wat is het Venturi-effect in een vallei/dal in meteorologische context?", "options": ["Wind wordt zwakker door weerstand", "Wind versnelt in een vernauwing", "Wind draait altijd 180°", "Wind veroorzaakt altijd mist"], "correctIndex": 1, "explanation": "Venturi-effect: door vernauwing neemt windsnelheid toe (Meteo, p. 31).", "difficulty": "medium"}, {"id": "met_q41", "question": "Welk fenomeen hoort bij opstuwende lucht tegen een berg/helling?", "options": ["Subsidentie, op kruishoogte", "Orografische stijging met bewolking/neerslag aan loefzijde", "Landbries, bij VFR-vluchten", "Inversie door straling, in gebruikelijke notatie"], "correctIndex": 1, "explanation": "Orografie: opstuwende lucht aan loefzijde kan wolken/neerslag vormen; lijzijde kan turbulentie geven (Meteo, p. 32).", "difficulty": "medium"}, {"id": "met_q42", "question": "Welke wolk wordt gekoppeld aan berggolven (mountain waves)?", "options": ["Stratus", "Lenticularis", "Nimbostratus", "Cirrus uncinus"], "correctIndex": 1, "explanation": "De cursus vermeldt lenticularis in context van bergen/berggolven (Meteo, p. 32).", "difficulty": "medium"}, {"id": "met_q43", "question": "Wat is windshear het best beschreven?", "options": ["Geleidelijke verandering van temperatuur met hoogte", "Plotse verandering van windrichting en/of windsnelheid over korte afstand", "Neerslag die verdampt voor de grond, bij gelijke omstandigheden", "Front dat stationair blijft, op lage hoogte"], "correctIndex": 1, "explanation": "Windshear wordt beschreven als abrupte verandering in wind (snelheid/richting) (Meteo, p. 32).", "difficulty": "hard"}, {"id": "met_q44", "question": "Wat is het hoofdmechanisme bij stralingsmist?", "options": ["Aanvoer van warme vochtige lucht over koude zee", "Afkoeling van het aardoppervlak door uitstraling tijdens heldere nacht", "Regen die verdampt, in gebruikelijke notatie, in operationele context", "Orografische opstuwing, in operationele context"], "correctIndex": 1, "explanation": "Stralingsmist ontstaat door afkoeling van bodem/onderste luchtlaag tijdens koude, heldere nacht (Meteo, p. 25).", "difficulty": "medium"}, {"id": "met_q45", "question": "Wat is het hoofdmechanisme bij zeemist (advectiemist)?", "options": ["Afkoeling door uitstraling boven land", "Aanvoer van warme vochtige lucht over een koud oppervlak", "Dalende lucht in hogedrukgebied", "Sublimatie van waterdamp naar ijskristallen in de vrije atmosfeer"], "correctIndex": 1, "explanation": "Zeemist/advectiemist: warme vochtige lucht stroomt over koud zee-oppervlak → afkoeling/condensatie (Meteo, p. 25).", "difficulty": "medium"}, {"id": "met_q46", "question": "Bij cumuluswolken duidt een horizontale donkere wolkenbasis meestal op …", "options": ["De tropopauze", "Het condensatieniveau", "Een warmtefront", "Een occlusiepunt"], "correctIndex": 1, "explanation": "Cumulus: donkere horizontale onderkant wijst op condensatieniveau (Meteo, p. 10).", "difficulty": "medium"}, {"id": "met_q47", "question": "Welke symbolische aanduiding hoort bij 'onweersbui' in de symbolenlijst op de weerkaartpagina?", "options": ["Een sterretje (*)", "Een bliksemsymbool", "Een 'V' rukwinden", "Twee puntjes (:)"], "correctIndex": 1, "explanation": "Op de symbolenpagina staat onweersbui als apart symbool (bliksem) (Meteo, p. 40).", "difficulty": "easy"}, {"id": "met_q48", "question": "Welke windsnelheid stelt de windbarb met drie volle veertjes (zoals op de symbolenpagina) voor?", "options": ["15 kn", "25 kn", "30 kn", "35 kn"], "correctIndex": 2, "explanation": "Op de symbolenpagina wordt 30 kn aangegeven met drie volle veertjes (Meteo, p. 40).", "difficulty": "medium"}, {"id": "met_q49", "question": "Wat betekent het symbool 'volledig' bij wolkbedekking op de weerkaartpagina?", "options": ["0/8", "2/8", "4/8", "8/8"], "correctIndex": 3, "explanation": "Wolkbedekking 'volledig' betekent 8/8 (overcast) (Meteo, p. 40).", "difficulty": "easy"}, {"id": "met_q50", "question": "Welk symbool hoort bij een koufront op weerkaarten?", "options": ["Rode lijn met halve bollen", "Blauwe lijn met driehoekjes", "Paarse lijn met afwisselend bollen en driehoekjes", "Groene lijn met ruitjes"], "correctIndex": 1, "explanation": "Koufront wordt voorgesteld met lijn en driehoekjes (Meteo, p. 29 & symbolenpagina p. 40).", "difficulty": "easy"}, {"id": "met_q51", "question": "Welk symbool hoort bij een warmtefront op weerkaarten?", "options": ["Blauwe lijn met driehoekjes", "Rode lijn met halve bollen", "Paarse lijn met afwisselend bollen en driehoekjes", "Zwarte gestippelde lijn"], "correctIndex": 1, "explanation": "Warmtefront wordt voorgesteld met rode lijn met halve bollen (Meteo, p. 29 & symbolenpagina p. 40).", "difficulty": "easy"}, {"id": "met_q52", "question": "Wat is het dauwpunt (Td) in meteorologische betekenis?", "options": ["De temperatuur waarbij RV 0% is, bij standaardprocedures", "De temperatuur waarbij lucht verzadigd wordt bij constante druk en waterdamp", "De temperatuur van de wolkentop, volgens standaarddefinities", "De standaardtemperatuur op zeeniveau, bij standaardprocedures"], "correctIndex": 1, "explanation": "Dauwpunt is de temperatuur waarbij lucht verzadigd raakt (condensatie start), gekoppeld aan RV (Meteo, p. 11).", "difficulty": "medium"}, {"id": "met_q53", "question": "Wat gebeurt er met de maximale hoeveelheid waterdamp die lucht kan bevatten als de luchtdruk daalt (andere factoren gelijk)?", "options": ["Ze daalt", "Ze stijgt", "Ze blijft identiek", "Ze wordt nul bij 1013 hPa"], "correctIndex": 1, "explanation": "De cursus vermeldt dat bij lagere druk lucht meer waterdamp kan bevatten (Meteo, p. 11).", "difficulty": "hard"}, {"id": "nav_q28", "question": "Je meet op een kaart 7,2 cm tussen twee punten. Schaal is 1:250.000. Wat is de afstand?", "options": ["1,8 km", "7,2 km", "18 km", "72 km"], "correctIndex": 2, "explanation": "1 cm = 2,5 km op schaal 1:250.000 → 7,2 cm = 18 km (Navigatie, p. 9).", "difficulty": "medium"}, {"id": "nav_q29", "question": "Een koerslijn is een rechte lijn op welke kaartprojectie?", "options": ["Lambert conform", "Mercator", "Gnomonisch", "Stereografisch"], "correctIndex": 1, "explanation": "Mercatorprojectie behoudt hoeken; koerslijn wordt rechte lijn (Navigatie, p. 8).", "difficulty": "easy"}, {"id": "nav_q30", "question": "Welke volgorde is correct om van ware route (Nv) naar kompaskoers (Nc) te gaan met variatie (V) en deviatie (d)?", "options": ["Nv → Nc via V en d: eerst deviatie, dan variatie", "Nv → Nm→ Nc", "Nv → Nc zonder correcties", "Nv → Nc: eerst d, daarna drift"], "correctIndex": 1, "explanation": "Relaties: Nm = Nv ± V en Nc = Nm ± d; dus eerst variatie, dan deviatie (Navigatie, p. 13).", "difficulty": "hard"}, {"id": "nav_q31", "question": "Waarom is een loxodroom in veel gevallen handig voor VFR-navigatie op kaart?", "options": ["Het is altijd de kortste route, in normale omstandigheden", "Het is een rechte lijn op de kaart en houdt constante koers aan", "Het volgt altijd een meridiaan, bij benadering", "Het vermijdt automatisch verboden gebieden"], "correctIndex": 1, "explanation": "Loxodroom snijdt meridianen onder constante hoek en is rechte lijn op Mercator (Navigatie, p. 8).", "difficulty": "medium"}, {"id": "nav_q32", "question": "Welke informatie is bij het plannen van een route over België typisch nodig naast de kaart zelf om te weten of zones actief zijn?", "options": ["Alleen QNH", "AIP + NOTAM", "Alleen METAR", "Alleen ULIP"], "correctIndex": 1, "explanation": "Voor activiteit en correcte grenzen: AIP en NOTAM raadplegen (Navigatie, p. 11).", "difficulty": "medium"}, {"id": "nav_q33", "question": "Welke AIP-sectie geeft de cursus aan om specifieke kaarten te raadplegen i.p.v. de volledige kaart?", "options": ["GEN 2, bij gelijkblijvende druk", "ENR 5.1/5.2/5.3 en ENR 6", "AD 1, in de praktijk", "MET 1"], "correctIndex": 1, "explanation": "Verwijzing naar ENR 5.x en ENR 6 Charts (Navigatie, p. 11).", "difficulty": "hard"}, {"id": "nav_q34", "question": "Op de oefenlijst staat 'Brussels TMA 4500 ft AMSL C'. Wat betekent dit het meest correct?", "options": ["TMA met bovenlimiet 4500 ft, klasse C", "TMA met onderlimiet 4500 ft AMSL, luchtruimklasse C", "CTR klasse C tot 4500 ft, bij constante temperatuur", "Verboden gebied tot 4500 ft, bij VFR-vluchten"], "correctIndex": 1, "explanation": "Notatie geeft een verticale grens + klasse aan; 'TMA 4500 ft AMSL C' duidt de ondergrens en klasse C (Navigatie, p. 26).", "difficulty": "hard"}, {"id": "nav_q35", "question": "Welke uitspraak over NDB en VOR is correct?", "options": ["NDB werkt in VHF, VOR in LF", "NDB werkt in kHz, VOR in MHz", "Beide werken uitsluitend in 118–137 MHz", "VOR geeft geen richting maar alleen afstand"], "correctIndex": 1, "explanation": "Frequenties: NDB 200–2000 kHz; VOR 108–118 MHz (Navigatie, p. 14).", "difficulty": "medium"}, {"id": "nav_q36", "question": "Wat is het belangrijkste voordeel van radio-navigatiebakens t.o.v. visuele referenties?", "options": ["Ze werken alleen bij windstilte, op lage hoogte", "Ze blijven bruikbaar bij dichte mist/gesloten wolkendek", "Ze geven automatisch luchtruimclearance", "Ze geven alleen TAS, op kruishoogte"], "correctIndex": 1, "explanation": "Radio-bakens blijven bruikbaar bij dichte mist of gesloten wolkendek (Navigatie, p. 14).", "difficulty": "easy"}, {"id": "nav_q37", "question": "Waarom moet je bij brandstofplanning extra tijd/brandstof voorzien voor aankomstfasen?", "options": ["Omdat GS altijd hoger is op final", "Omdat circuit", "Omdat motor op idle geen brandstof verbruikt", "Omdat GPS brandstof verbruikt"], "correctIndex": 1, "explanation": "De cursus noemt circuit/eindnadering/taxi op bestemming expliciet als tijd/brandstof (Navigatie, p. 18).", "difficulty": "medium"}, {"id": "nav_q38", "question": "Je plant 1u20min cruise aan 14 l/uur. Wat is het verbruik in de cruise?", "options": ["11,2 l", "14 l", "18,7 l", "28 l"], "correctIndex": 0, "explanation": "1u20 = 1,333 uur; 1,333 × 14 = 18,66 l ≈ 18,7 l (Navigatie, p. 18 rekenmethode).", "difficulty": "hard"}, {"id": "nav_q39", "question": "Welke planningkeuze maakt een navigatie conservatiever tegen tegenwind?", "options": ["GS groter inschatten", "GS kleiner inschatten", "Geen reserve voorzien", "Alleen GPS gebruiken"], "correctIndex": 1, "explanation": "Conservatief: GS liever te klein dan te groot om tijd/brandstof niet te onderschatten (Navigatie, p. 18).", "difficulty": "medium"}, {"id": "nav_q40", "question": "Welke uitspraak over wegen volgen (cheminement) is correct?", "options": ["Het is alleen bruikbaar bij nul wind, volgens standaarddefinities", "Het kan driftproblemen sterk beperken omdat je voortdurend visuele referenties bijstuurt", "Het is verboden in België, bij gelijke omstandigheden", "Het vervangt NOTAM en AIP, in gebruikelijke notatie"], "correctIndex": 1, "explanation": "Wegen volgen vermindert risico om verloren te vliegen door drift; ook bij sterke wind bruikbaar (Navigatie, p. 18).", "difficulty": "medium"}, {"id": "nav_q41", "question": "Wanneer er weinig bruikbare wegen zijn, welke methode wordt als alternatief genoemd?", "options": ["Altijd IFR vliegen, in operationele context", "Overvliegen met kompaskoers en drift corrigeren via snelheidsdriehoeken", "Alleen VOR gebruiken, bij standaardprocedures", "Alleen op zicht zonder kaart, in normale omstandigheden"], "correctIndex": 1, "explanation": "Bij weinig bruikbare wegen: gebied overvliegen met kompaskoers; drift corrigeren met snelheidsdriehoeken (Navigatie, p. 18).", "difficulty": "hard"}, {"id": "nav_q42", "question": "Wat bedoelt de cursus met 'de kaart moet recent zijn'?", "options": ["Papier moet nieuw ruiken", "Luchtruimindeling", "Schaal verandert elk jaar", "Alle kaarten zijn identiek"], "correctIndex": 1, "explanation": "De cursus waarschuwt dat je steeds een recente kaart moet nemen wegens wijzigingen (Navigatie, p. 9–11).", "difficulty": "easy"}, {"id": "nav_q43", "question": "Welke omrekening gebruikt de cursus voor 1 nautische mijl (NM) naar kilometer?", "options": ["1 NM = 1,609 km", "1 NM = 1,852 km", "1 NM = 2,000 km", "1 NM = 1,000 km"], "correctIndex": 1, "explanation": "De cursus gebruikt 1 NM = 1,852 km (Navigatie, p. 8).", "difficulty": "easy"}, {"id": "nav_q44", "question": "Bij zuid-noord verplaatsing geldt: 1 minuut breedte is …", "options": ["1 km", "1 NM", "10 NM", "0,1 NM"], "correctIndex": 1, "explanation": "Elke minuut breedte langs een meridiaan is 1 Nautical Mile (Navigatie, p. 8).", "difficulty": "easy"}, {"id": "nav_q45", "question": "Welke waarde hoort bij 1 graad breedte?", "options": ["6 NM", "60 NM", "600 NM", "1 NM"], "correctIndex": 1, "explanation": "1 graad = 60 minuten; 1 minuut = 1 NM → 1 graad = 60 NM (Navigatie, p. 8).", "difficulty": "medium"}, {"id": "nav_q46", "question": "Welke sleutelreden geeft de cursus om een navigatie vooraf volledig uit te werken i.p.v. 'improviseren'?", "options": ["Omdat GPS altijd uitvalt, volgens standaarddefinities", "Omdat bij ULM niet overal getankt kan worden en factoren moeten kloppen", "Omdat een ULM geen kompas heeft, bij benadering", "Omdat kaartlezen verboden is, in normale omstandigheden"], "correctIndex": 1, "explanation": "Inleiding: ULM kan niet zomaar ergens bijtanken; je moet wachten op juiste factoren en dus goed plannen (Navigatie, p. 1–2).", "difficulty": "medium"}, {"id": "nav_q47", "question": "Welke kaart wordt als basis genoemd voor microluchtvaart in België (met hoogteband)?", "options": ["High Air FL195–FL660", "Low Air GND–4500 ft AMSL", "IFR enroute chart only", "VFR chart GND–FL195"], "correctIndex": 1, "explanation": "De cursus noemt de Low Air kaart GND–4500 ft AMSL (Navigatie, p. 9).", "difficulty": "easy"}, {"id": "pv_q29", "question": "Wat is de primaire functie van het hoogteroer?", "options": ["Rolbeweging rond de lengte-as", "Gierbeweging rond de verticale as", "Pitchbeweging rond de dwarsas", "Remwerking op de grond"], "correctIndex": 2, "explanation": "Besturing rond de dwarsas (pitch) gebeurt met hoogteroer/stuurknuppel (Principes van het vliegen, p. 26–31).", "difficulty": "medium"}, {"id": "pv_q30", "question": "Welke besturing veroorzaakt hoofdzakelijk een rolbeweging?", "options": ["Richtingsroer", "Rolroeren", "Trimvlak", "Flaps"], "correctIndex": 1, "explanation": "Rolroeren sturen rolbeweging rond de lengte-as (Principes van het vliegen, p. 26–31).", "difficulty": "easy"}, {"id": "pv_q31", "question": "Welke besturing veroorzaakt hoofdzakelijk een gierbeweging?", "options": ["Hoogteroer", "Rolroeren", "Richtingsroer", "Spoilers"], "correctIndex": 2, "explanation": "Richtingsroer beïnvloedt gierbeweging rond de verticale as (Principes van het vliegen, p. 28–31).", "difficulty": "easy"}, {"id": "pv_q32", "question": "Wat is een slip in een bocht (coördinatie)?", "options": ["Neus draait te veel naar binnen: te veel richtingsroer", "Neus blijft te veel buiten: te weinig richtingsroer voor de bank", "Altijd gevolg van te hoge snelheid", "Altijd gevolg van flaps"], "correctIndex": 1, "explanation": "Slip/skid wordt in de cursus besproken in de context van bochtcoördinatie (Principes van het vliegen, p. 27–28).", "difficulty": "hard"}, {"id": "pv_q33", "question": "Welke combinatie beschrijft het effect van flaps het best?", "options": ["Alleen weerstand neemt af", "Lift neemt toemaar ook weerstand neemt toe", "Lift neemt af, weerstand neemt af", "Lift verandert niet, alleen gewicht neemt toe"], "correctIndex": 1, "explanation": "Flaps verhogen draagkrachtcoëfficiënt maar verhogen ook weerstand (Principes van het vliegen, p. 51–52).", "difficulty": "medium"}, {"id": "pv_q34", "question": "Wat is een typische reden om flaps te gebruiken bij landing?", "options": ["Hogere kruissnelheid, in de praktijk", "Lagere naderingssnelheid en steilere daalhoek mogelijk", "Minder besturing nodig, in de praktijk", "Om VNE te verhogen, bij benadering"], "correctIndex": 1, "explanation": "Flaps helpen lagere snelheid en gecontroleerde benadering door extra lift/weerstand (Principes van het vliegen, p. 51–52).", "difficulty": "medium"}, {"id": "pv_q35", "question": "Wat is het effect van een te achterlijk zwaartepunt op stabiliteit?", "options": ["Stabiliteit neemt toe, pitch wordt rustiger", "Stabiliteit neemt af en pitchcontrole kan kritisch worden", "Geen effect op stabiliteit, bij gelijkblijvende druk", "Alleen rolstabiliteit verandert, bij constante temperatuur"], "correctIndex": 1, "explanation": "Cursus bespreekt zwaartepunt en stabiliteit; te achterlijk CG vermindert longitudinale stabiliteit (Principes van het vliegen, p. 42).", "difficulty": "hard"}, {"id": "pv_q36", "question": "Welke situatie verhoogt de kans op spin na een overtrokken toestand het meest?", "options": ["Symmetrische overtrokken toestand zonder giermoment", "Asymmetrisch overtrokken toestel met gier/rolmoment", "Vliegen met flaps volledig in", "Vliegen met lage dichtheidshoogte"], "correctIndex": 1, "explanation": "Spin wordt behandeld als asymmetrisch stall met gier/rolmoment (Principes van het vliegen, p. 72).", "difficulty": "hard"}, {"id": "pv_q37", "question": "Welke factor maakt een stall gevaarlijker in turbulente lucht?", "options": ["VS wordt lager, bij VFR-vluchten, bij gelijkblijvende druk", "Aanvalshoek kan plots boven kritisch komen zonder dat IAS veel verandert", "Lift wordt onafhankelijk van AoA", "Coriolis wordt sterker, op kruishoogte"], "correctIndex": 1, "explanation": "De cursus vermeldt turbulentie als factor die stall-veiligheidsmarge beïnvloedt (Principes van het vliegen, p. 15).", "difficulty": "hard"}, {"id": "pv_q38", "question": "Wat is het effect van hogere massa/gewicht op de overtreksnelheid (VS)?", "options": ["VS daalt", "VS stijgt", "VS blijft gelijk", "VS wordt gelijk aan VNE"], "correctIndex": 1, "explanation": "VS verandert met omstandigheden zoals gewicht (Principes van het vliegen, p. 15).", "difficulty": "medium"}, {"id": "pv_q39", "question": "Welke uitspraak is correct over geïnduceerde weerstand bij lage snelheid?", "options": ["Geïnduceerde weerstand is laag bij lage snelheid", "Geïnduceerde weerstand neemt toe bij lage snelheid/hoog lift", "Geïnduceerde weerstand is onafhankelijk van lift", "Geïnduceerde weerstand bestaat alleen bij supersonisch"], "correctIndex": 1, "explanation": "Induced drag hangt samen met opwekken van lift en is relatief groot bij lage snelheid/hoge AoA (Principes van het vliegen, p. 11).", "difficulty": "hard"}, {"id": "pv_q40", "question": "Wat is het gevolg als je in een bocht de bank vergroot maar de lift niet verhoogt?", "options": ["Je blijft op hoogte, maar snelheid stijgt", "Je verliest hoogte", "Je stijgt", "Je maakt een slip automatisch goed"], "correctIndex": 1, "explanation": "In bocht: verticale component van lift moet gewicht blijven compenseren; anders daal je (Principes van het vliegen, p. 20–22).", "difficulty": "medium"}, {"id": "pv_q41", "question": "Bij 45° bank is de belastingsfactor ongeveer 1,4. Wat gebeurt er met de stall-snelheid t.o.v. rechtuit?", "options": ["Daalt met √1,4", "Stijgt met √1,4", "Blijft gelijk", "Verdubbelt altijd"], "correctIndex": 1, "explanation": "VS in bocht neemt toe met √g-factor (Principes van het vliegen, p. 22).", "difficulty": "hard"}, {"id": "pv_q42", "question": "Wat is de meest correcte interpretatie van VY in prestatiecontext?", "options": ["Snelheid voor beste stijgsnelheid", "Snelheid voor beste glijhoek", "Snelheid voor minimum daalsnelheid", "Snelheid voor maximum structurele belasting"], "correctIndex": 0, "explanation": "Prestatiebegrippen rond klimmen/daalprofiel worden behandeld; VY is beste stijgsnelheid (Principes van het vliegen, p. 17).", "difficulty": "medium"}, {"id": "pv_q43", "question": "Waarom verhoogt weerstand (drag) wanneer je snelheid toeneemt in het kwadraat (bij gelijkblijvende Cl)?", "options": ["Omdat druk altijd lineair stijgt", "Omdat aerodynamische krachten afhankelijk zijn van V²", "Omdat gewicht toeneemt, op lage hoogte", "Omdat Cl automatisch stijgt, bij gelijke omstandigheden"], "correctIndex": 1, "explanation": "Formules voor lift/weerstand bevatten V²-term; verdubbelen V → krachten x4 (Principes van het vliegen, p. 13–14).", "difficulty": "medium"}, {"id": "pv_q44", "question": "Wat is het effect van grotere vleugeloppervlakte S op noodzakelijke snelheid om dezelfde lift te leveren?", "options": ["Nodige snelheid stijgt", "Nodige snelheid daalt", "Geen effect", "Alleen VS stijgt"], "correctIndex": 1, "explanation": "Groter S verhoogt lift bij gegeven V/AoA → trager vliegen mogelijk (Principes van het vliegen, p. 13).", "difficulty": "medium"}, {"id": "pv_q45", "question": "Welke situatie vergroot de kans op structurele schade door overspeed het meest?", "options": ["Vliegen dicht bij VS in turbulentie", "Vliegen boven VNE in duikvlucht", "Vliegen met flaps half", "Vliegen met lage massa"], "correctIndex": 1, "explanation": "VNE is maximum nooit te overschrijden; te hoge snelheid kan vleugel vervormen/beschadigen (Principes van het vliegen, p. 15).", "difficulty": "easy"}, {"id": "pv_q46", "question": "Wat is het verschil tussen 'beste fijnheid' en 'minimale daalsnelheid'?", "options": ["Beste fijnheid = langst in de lucht; minimale daalsnelheid = verst geraken", "Beste fijnheid = verst geraken", "Beide betekenen hetzelfde", "Beide zijn alleen relevant met motorvermogen"], "correctIndex": 1, "explanation": "Beste fijnheid → verst wegzweven; minimale daalsnelheid → langst in de lucht blijven (Principes van het vliegen, p. 19).", "difficulty": "medium"}, {"id": "pv_q47", "question": "Wat gebeurt er met de polaire als de lucht niet windstil is?", "options": ["Polaire blijft identiek, want hij is onafhankelijk van wind", "De polaire blijft geldig voor het toestel t.o.v. de lucht", "Polaire wordt ongeldig", "Polaire geldt alleen in IMC"], "correctIndex": 1, "explanation": "Polaire geldt voor zweefvlucht in windstilte; in wind verandert grondeffect (Principes van het vliegen, p. 19).", "difficulty": "hard"}, {"id": "pv_q48", "question": "Welke combinatie beschrijft best waarom een bocht zonder hoogteverlies meer lift vereist?", "options": ["Omdat gewicht toeneemt, in operationele context", "Omdat verticale component van lift kleiner is bij bank", "Omdat sleep nul wordt, in gebruikelijke notatie", "Omdat trekkracht altijd daalt"], "correctIndex": 1, "explanation": "Bank → liftvector helt; verticale component neemt af, dus totale lift moet omhoog (Principes van het vliegen, p. 20–22).", "difficulty": "medium"}, {"id": "pv_q49", "question": "Wat is een typische reden dat een spin moeilijker te stoppen kan zijn met te achterlijk zwaartepunt?", "options": ["Richtingsroer wordt sterker, volgens standaarddefinities", "Effectiviteit van stabilo/roeren kan verminderen", "Liftcoëfficiënt stijgt, bij standaardprocedures", "Geïnduceerde weerstand verdwijnt"], "correctIndex": 1, "explanation": "Zwaartepunt beïnvloedt stabiliteit en herstel; achterlijk CG is kritisch bij stall/spin (Principes van het vliegen, p. 42 & p. 72).", "difficulty": "hard"}, {"id": "pv_q50", "question": "Wat is het effect van propellerkoppel (torque) bij hoge vermogensinstelling op lage snelheid?", "options": ["Geen effect op roll", "Tendens tot rol in tegengestelde richting van propellerrotatie", "Tendens tot rol in dezelfde richting als propellerrotatie", "Alleen gier naar links"], "correctIndex": 1, "explanation": "Propeller- en motorinvloeden worden behandeld; torque veroorzaakt rolneiging tegengesteld aan propellerrotatie (Principes van het vliegen, p. 70).", "difficulty": "hard"}, {"id": "pv_q51", "question": "Wat beschrijft gyroscopische precessie in relatie tot propeller het best?", "options": ["Reactie 90° later in draairichting op een toegepaste kracht", "Propeller draait niet bij hoge IAS", "Lift verdwijnt door torque, bij benadering", "Alleen effect boven FL100, in normale omstandigheden"], "correctIndex": 0, "explanation": "Propeller als gyroscoop: precessie = reactie 90° later (Principes van het vliegen, p. 70).", "difficulty": "hard"}, {"id": "pv_q52", "question": "Welke factor beïnvloedt lift rechtstreeks via de formule L = 1/2·ρ·S·V²·Cl?", "options": ["Kompasdeviatie", "Soortelijke massa ρ", "Breedtegraad", "Coriolisparameter"], "correctIndex": 1, "explanation": "Liftformule bevat ρ; ijlere lucht (lagere ρ) geeft minder lift (Principes van het vliegen, p. 13–14).", "difficulty": "easy"}, {"id": "pv_q53", "question": "Waarom kan een toestel met dezelfde IAS op grotere hoogte dichter bij stall zitten?", "options": ["Omdat IAS altijd gelijk is aan TAS", "Omdat de lucht ijler is en de werkelijke TAS hoger is", "Omdat Cl nul wordt, in de praktijk", "Omdat gewicht afneemt, bij gelijkblijvende druk"], "correctIndex": 1, "explanation": "De cursus bespreekt invloed van ijlere lucht op lift en vliegkarakteristiek (Principes van het vliegen, p. 13).", "difficulty": "hard"}, {"id": "reg_q28", "question": "Welke kleur(en) en sectorhoek hebben de navigatielichten op de vleugeluiteinden?", "options": ["Rood links 110°, groen rechts 110°", "Rood rechts 140°, groen links 140°", "Wit links 110°, rood rechts 110°", "Rood links 180°, groen rechts 180°"], "correctIndex": 0, "explanation": "Navigatielichten: rood links 110° en groen rechts 110° (Reglementering, p. 34).", "difficulty": "medium"}, {"id": "reg_q29", "question": "Welke sectorhoek heeft het witte staartlicht (achteraan)?", "options": ["110°", "120°", "140°", "180°"], "correctIndex": 2, "explanation": "Wit licht achteraan zichtbaar in sector 140° (Reglementering, p. 34).", "difficulty": "medium"}, {"id": "reg_q30", "question": "Wat is de definitie van 'periode van de dag' in de context van navigatielichten?", "options": ["CET 08:00–20:00, bij constante temperatuur", "Van zonsopgang tot zonsondergang volgens KMI-jaarkalender", "Van lokale middag tot middernacht", "Altijd wanneer zicht > 5 km, bij VFR-vluchten"], "correctIndex": 1, "explanation": "Dagperiode: van zonsopgang tot zonsondergang volgens jaarkalender KMI (Reglementering, p. 34).", "difficulty": "easy"}, {"id": "reg_q31", "question": "Wat betekent het sein 'rood vierkant met twee gele diagonalen' in het seinenvierkant?", "options": ["Opletten bij het landen, slechte toestand terrein", "Verboden te landen", "Zweefvluchten aan de gang", "Sleepkabels losgooien hier"], "correctIndex": 1, "explanation": "Rood vierkant met twee gele diagonalen: verboden te landen (Reglementering, p. 35).", "difficulty": "easy"}, {"id": "reg_q32", "question": "Wat betekent een 'witte of oranje landings-T' in het seinenvierkant?", "options": ["Circuit wordt rechts gevlogen, op lage hoogte", "Landen/opstijgen in richting van staand been en van voet naar top van de T", "Verboden te taxiën buiten rijbanen, bij constante temperatuur", "Onmiddellijk stoppen, op kruishoogte"], "correctIndex": 1, "explanation": "Landings-T: landen en opstijgen in richting van staand been; van voet naar top (Reglementering, p. 35).", "difficulty": "medium"}, {"id": "reg_q33", "question": "Wat betekent een 'witte halter' in het seinenvierkant?", "options": ["Uitsluitend op banen landen/opstijgen en uitsluitend op rijbanen taxiën", "Verboden te landen, bij gelijke omstandigheden", "Zweefvluchten aan de gang, bij VFR-vluchten", "Sleepkabels losgooien, in gebruikelijke notatie"], "correctIndex": 0, "explanation": "Witte halter: uitsluitend op banen landen/opstijgen en uitsluitend op rijbanen taxiën (Reglementering, p. 35).", "difficulty": "hard"}, {"id": "reg_q34", "question": "Wat betekent een 'dubbel wit kruis' in het seinenvierkant?", "options": ["Zweefvluchten zijn aan de gang", "Verboden te landen", "Circuit rechts", "Slechte baanconditie"], "correctIndex": 0, "explanation": "Dubbel wit kruis: zweefvluchten zijn aan de gang (Reglementering, p. 35).", "difficulty": "easy"}, {"id": "reg_q35", "question": "Welke betekenis heeft het interceptiesignaal 'vleugels op en neer bewegen' door het intercepterend vliegtuig vóór het onderschepte vliegtuig?", "options": ["LAND OP DIT VLIEGVELD!", "VOLG MIJ!", "U KUNT DOORGAAN!", "RADIOSTORING"], "correctIndex": 1, "explanation": "Interceptiesignalen: vleugels schommelen vóór onderschept vliegtuig betekent VOLG MIJ! (Reglementering, p. 46).", "difficulty": "medium"}, {"id": "reg_q36", "question": "Wat betekent het antwoord van het onderschepte vliegtuig met 'vleugels op en neer bewegen'?", "options": ["BEGREPEN!", "NEE!", "LAND IK NIET", "IK BEN IN NOOD"], "correctIndex": 0, "explanation": "In de tabel: het onderschepte vliegtuig schommelt vleugels als antwoord = BEGREPEN! (Reglementering, p. 46).", "difficulty": "easy"}, {"id": "reg_q37", "question": "Welke manoeuvre van het intercepterend vliegtuig betekent 'U KUNT DOORGAAN!'?", "options": ["Vleugels schommelen en dalen", "Plots zwenken van 90° of meer en klimmen", "Cirkelen boven een vliegveld met landingsgestel neer", "Lichtsignalen geven met landingslicht"], "correctIndex": 1, "explanation": "Tabel interceptie: plots zwenken 90° of meer en klimmen met vleugels schommelen = U KUNT DOORGAAN! (Reglementering, p. 46).", "difficulty": "hard"}, {"id": "reg_q38", "question": "Welke combinatie geeft het juiste interceptiesignaal voor 'LAND OP DIT VLIEGVELD!'?", "options": ["Cirkelen boven vliegveld, landingsgestel neer, landen", "Rechte vlucht met flaps uit, bij standaardprocedures", "Zwenken 90° en klimmen, in operationele context", "Vleugels schommelen en wegdraaien"], "correctIndex": 0, "explanation": "Tabel: cirkelen boven vliegveld, landingsgestel neer, landen = LAND OP DIT VLIEGVELD! (Reglementering, p. 46).", "difficulty": "hard"}, {"id": "reg_q39", "question": "Hoe wordt het nummer van een landingsbaan bepaald?", "options": ["Ware richting afgerond op dichtste graad", "Magnetische richting afgerond op dichtste tiental", "Kompasrichting zonder afronden", "Altijd gelijk aan GPS track"], "correctIndex": 1, "explanation": "Runwaynummer: magnetische richting afronden naar dichtste decimaal (tientallen) (Reglementering, p. 41).", "difficulty": "medium"}, {"id": "reg_q40", "question": "Een baan heeft magnetische richting 189°. Welke baanbenaming hoort daarbij?", "options": ["18", "19", "20", "09"], "correctIndex": 1, "explanation": "189° afgerond → 190° → decimaal 19 (Reglementering, p. 41).", "difficulty": "easy"}, {"id": "reg_q41", "question": "Welke circuitrichting is standaard als er geen aanduidingen zijn?", "options": ["Altijd rechts", "Altijd links", "Altijd afhankelijk van wind", "Altijd volgens ATIS"], "correctIndex": 1, "explanation": "Standaard circuit: links, tenzij aangeduid (Reglementering, p. 41).", "difficulty": "easy"}, {"id": "reg_q42", "question": "Wat betekent een pijl in het seinenvierkant die naar rechts wijst?", "options": ["Startbaan gesloten", "Circuitrechts vliegen", "Verboden te landen", "Sleepkabel losgooiplaats"], "correctIndex": 1, "explanation": "Pijl naar rechts: voor landing en na opstijgen bocht naar rechts; circuit rechts (Reglementering, p. 35).", "difficulty": "medium"}, {"id": "reg_q43", "question": "Welke volgorde van circuitsegmenten is correct na take-off bij een standaard circuit?", "options": ["Final → base → downwind → crosswind", "Upwind → crosswind → downwind → base → final", "Crosswind → upwind → final → base", "Downwind → base → crosswind → final"], "correctIndex": 1, "explanation": "Cursus beschrijft segmenten: upwind, crosswind, downwind, base, final (Reglementering, p. 41).", "difficulty": "medium"}, {"id": "reg_q44", "question": "Welke interpretatie van QNH is correct?", "options": ["Druk op veldniveau; altimeter geeft hoogte boven baan", "Druk herleid naar zeeniveau", "Standaarddruk voor Flight Levels", "Druk in pitotbuis"], "correctIndex": 1, "explanation": "QNH = druk herleid naar zeeniveau; geeft hoogte boven zeeniveau (Reglementering, p. 12–13).", "difficulty": "medium"}, {"id": "reg_q45", "question": "Welke instelling gebruik je om Flight Levels (FL) te vliegen?", "options": ["QFE", "QNH", "1013,2 hPa", "Lokale druk uit METAR"], "correctIndex": 2, "explanation": "Flight Levels worden gevlogen met standaarddruk 1013,2 hPa (Reglementering, p. 12).", "difficulty": "easy"}, {"id": "reg_q46", "question": "Welke NOTAM-letter staat voor berichten die relevant zijn buiten gecontroleerd luchtruim onder 4500 ft AMSL?", "options": ["B", "E", "F", "M"], "correctIndex": 2, "explanation": "NOTAM-letter F: buiten gecontroleerd luchtruim en < 4500 ft AMSL (Reglementering, p. 6).", "difficulty": "hard"}, {"id": "reg_q47", "question": "Welke NOTAM-letter staat voor berichten over private luchthavens?", "options": ["B", "E", "F", "Z"], "correctIndex": 0, "explanation": "NOTAM-letter B: private luchthavens (Reglementering, p. 6).", "difficulty": "hard"}];
+</script>
+
+
+<script>
+  // ============ HARDCODED CATEGORIES ============
+  const CATEGORIES = {
+    meteo: {
+      name: 'Meteorologie',
+      icon: '🌦️',
+      subtitle: 'Weer & Atmosfeer',
+      pdfFile: 'Meteo.pdf'
+    },
+    navigatie: {
+      name: 'Navigatie',
+      icon: '🧭',
+      subtitle: 'Routeplanning & Kaarten',
+      pdfFile: 'navigatie.pdf'
+    },
+    vliegen: {
+      name: 'Principes van Vliegen',
+      icon: '✈️',
+      subtitle: 'Aerodynamica & Prestaties',
+      pdfFile: 'vliegen.pdf'
+    },
+    reglementering: {
+      name: 'Reglementering',
+      icon: '📋',
+      subtitle: 'Wet- & Regelgeving',
+      pdfFile: 'reglementering.pdf'
+    }
+  };
+
+  // Exam category is separate – not in CATEGORIES (different data source)
+  const EXAM_CATEGORY = {
+    key: 'examen',
+    name: 'Proefexamen',
+    icon: '🎓',
+    subtitle: '20 willekeurige vragen uit alle cursussen',
+    meta: '110 vragen · 20 per sessie'
+  };
+
+  // ============ LEARNING MODE VIDEO DATA ============
+  // Maps study_sheet ID → array of video objects for that chapter
+  const CHAPTER_VIDEOS = {
+    // Meteo
+    sheet_meteo_atmos: [
+      {
+        title: "ICAO Standaard Atmosfeer",
+        subtitle: "Pilots uitleg – ISA, lagen & temperatuur",
+        videoId: "dicULSq9d0s"
+      },
+      {
+        title: "Atmosferische lagen",
+        subtitle: "Troposfeer, stratosfeer en meer",
+        videoId: "yXiQLFD68Mk",
+        isShort: true
+      }
+    ],
+    sheet_meteo_druk: [
+      {
+        title: "Hoe werkt een altimeter (barometrisch)?",
+        subtitle: "Aneroïde, hoogtemeter & luchtdruk",
+        videoId: "L1ml_vIibJc"
+      },
+      {
+        title: "Luchtdruk vs hoogte",
+        subtitle: "Barometer, isobaren & H/L-gebieden",
+        videoId: "7_yf-iRf8Vc"
+      }
+    ],
+    sheet_meteo_vocht: [
+      {
+        title: "Carburatorbevriezing & carb icing",
+        subtitle: "Dauwpunt, relatieve vochtigheid & veiligheid",
+        videoId: "ZR5lgl4pK_8"
+      }
+    ],
+    sheet_meteo_wind: [
+      {
+        title: "Coriolis + Buys-Ballot",
+        subtitle: "Waarom wind evenwijdig aan isobaren waait",
+        videoId: "60Fz1opbddg"
+      },
+      {
+        title: "Wind in de luchtvaart",
+        subtitle: "Surface winds, windrapportering – ATPL/PPL",
+        videoId: "-xCpRQsIGbA"
+      }
+    ],
+    sheet_meteo_temp: [
+      {
+        title: "Temperatuur & warmteoverdracht",
+        subtitle: "Straling, geleiding, convectie – DGCA/CPL/ATPL",
+        videoId: "5TkDNWBG47I"
+      },
+      {
+        title: "Inversie uitgelegd",
+        subtitle: "Temperatuurinversie in luchtvaart context",
+        videoId: "Dk9VHHFUbqo"
+      }
+    ],
+    sheet_meteo_wolken: [
+      {
+        title: "Wolken in de luchtvaart",
+        subtitle: "Namen, types, ceiling & mist – pilots/dispatchers",
+        videoId: "gPzPkaint_U"
+      }
+    ],
+    sheet_meteo_fronten: [
+      {
+        title: "Weerfronten uitgelegd",
+        subtitle: "Warm-, koud-, occluded- & stationary-front",
+        videoId: "wjoTFIhL61c"
+      }
+    ],
+    sheet_meteo_metar: [
+      {
+        title: "METAR lezen",
+        subtitle: "Volledige pilot-uitleg van METAR",
+        videoId: "LMbCxwzm-wY"
+      },
+      {
+        title: "Breaking the Weather Code",
+        subtitle: "METAR + TAF change groups – PPL-stijl",
+        videoId: "DCJ7HbF1zWQ"
+      }
+    ],
+
+    // ── Principes van Vliegen ─────────────────────────────────────────
+    sheet_pv1: [
+      {
+        title: "Doorsnede van de vleugel",
+        subtitle: "Profiel, koorde en slankheid uitgelegd",
+        videoId: "wU2f-B4XilA"
+      }
+    ],
+    sheet_pv2: [
+      {
+        title: "De drie assen van een vliegtuig",
+        subtitle: "Roll, Pitch en Yaw – assenstelsel",
+        videoId: "R7XInG7Vv0I"
+      }
+    ],
+    sheet_pv3: [
+      {
+        title: "Waarom vliegen we? – Liftkracht",
+        subtitle: "Bernoulli & Newton – hoe lift ontstaat",
+        videoId: "6RoBo3fue4Q"
+      }
+    ],
+    sheet_pv4: [
+      {
+        title: "De vier krachten op een vliegtuig",
+        subtitle: "Lift, gewicht, stuwkracht en weerstand",
+        videoId: "zZTcHcJWNfg"
+      }
+    ],
+    sheet_pv5: [
+      {
+        title: "Zweefvliegen en glijvlucht",
+        subtitle: "Vliegen zonder aandrijving – glijratio",
+        videoId: "ozHI4eQ6BmM"
+      }
+    ],
+    sheet_pv7: [
+      {
+        title: "Invalshoek en overtrekken (stall)",
+        subtitle: "Hoe een vleugel overtrekt",
+        videoId: "ZuGPcvC4vbw"
+      }
+    ],
+    sheet_pv8: [
+      {
+        title: "De polaire – aerodynamische efficiëntie",
+        subtitle: "Lift/weerstand verhouding grafisch",
+        videoId: "diir-q3Ldt0"
+      }
+    ],
+    sheet_pv9_10: [
+      {
+        title: "Bochtvlucht en belasting",
+        subtitle: "Bochten en G-krachten in de lucht",
+        videoId: "w9j8pvfk3ok"
+      },
+      {
+        title: "G-krachten – impact op de mens",
+        subtitle: "Centrifuge – menselijk lichaam onder G",
+        videoId: "RxGwdVw1jZw"
+      }
+    ],
+
+    // ── Principes van Vliegen (sheet_vl_* aliases from navigatie data) ──
+    sheet_vl_profiel: [
+      {
+        title: "Doorsnede van de vleugel",
+        subtitle: "Profiel, koorde en slankheid uitgelegd",
+        videoId: "wU2f-B4XilA"
+      }
+    ],
+    sheet_vl_assen: [
+      {
+        title: "De drie assen van een vliegtuig",
+        subtitle: "Roll, Pitch en Yaw – assenstelsel",
+        videoId: "R7XInG7Vv0I"
+      }
+    ],
+    sheet_vl_bernoulli: [
+      {
+        title: "Waarom vliegen we? – Liftkracht",
+        subtitle: "Bernoulli & Newton – hoe lift ontstaat",
+        videoId: "6RoBo3fue4Q"
+      }
+    ],
+    sheet_vl_krachten: [
+      {
+        title: "De vier krachten op een vliegtuig",
+        subtitle: "Lift, gewicht, stuwkracht en weerstand",
+        videoId: "zZTcHcJWNfg"
+      }
+    ],
+    sheet_vl_fijnheid: [
+      {
+        title: "Zweefvliegen en glijvlucht",
+        subtitle: "Vliegen zonder aandrijving – glijratio",
+        videoId: "ozHI4eQ6BmM"
+      },
+      {
+        title: "De polaire – aerodynamische efficiëntie",
+        subtitle: "Lift/weerstand verhouding grafisch",
+        videoId: "diir-q3Ldt0"
+      }
+    ],
+    sheet_vl_invalshoek: [
+      {
+        title: "Invalshoek en overtrekken (stall)",
+        subtitle: "Hoe een vleugel overtrekt",
+        videoId: "ZuGPcvC4vbw"
+      }
+    ],
+    sheet_vl_bocht: [
+      {
+        title: "Bochtvlucht en belasting",
+        subtitle: "Bochten en G-krachten in de lucht",
+        videoId: "w9j8pvfk3ok"
+      },
+      {
+        title: "G-krachten – impact op de mens",
+        subtitle: "Centrifuge – menselijk lichaam onder G",
+        videoId: "RxGwdVw1jZw"
+      }
+    ],
+
+    // ── Navigatie ─────────────────────────────────────────────────────
+    sheet_nav_coords: [
+      {
+        title: "Basic VFR navigatie – inleiding",
+        subtitle: "Dead reckoning, pilotage & VFR planning basics",
+        videoId: "G6E1EhXQbAA"
+      }
+    ],
+    sheet_nav_tijdkaart: [
+      {
+        title: "Variatie vs. deviatie uitgelegd",
+        subtitle: "Magnetische variatie en kompasdeviatie voor piloten",
+        videoId: "bd679eKFpU8"
+      },
+      {
+        title: "Kompas basisprincipes",
+        subtitle: "Hoe een luchtvaartkompas werkt",
+        videoId: "CEznYCZNfe0"
+      }
+    ],
+    sheet_nav_tech: [
+      {
+        title: "Winddriehoek / WCA / drift",
+        subtitle: "Wind correction angle en koersberekening",
+        videoId: "m4-vw0KwGWs"
+      },
+      {
+        title: "VOR tracking & radials",
+        subtitle: "VOR navigatie – radials en bijsturen",
+        videoId: "3vYhG7q9y1U"
+      },
+      {
+        title: "ADF/NDB bearings",
+        subtitle: "NDB peilen en ADF navigatie basics",
+        videoId: "QqfA8vY2j2g"
+      }
+    ],
+    sheet_nav_kaart: [
+      {
+        title: "Navlog stap voor stap",
+        subtitle: "VFR cross-country navigatielog invullen",
+        videoId: "Ydvev6B7IaY"
+      },
+      {
+        title: "NOTAMs uitgelegd",
+        subtitle: "Hoe NOTAMs lezen en toepassen",
+        videoId: "9k_6VDhAFJs"
+      },
+      {
+        title: "VFR luchtvaartkaart lezen",
+        subtitle: "Gecontroleerd luchtruim, floors & ceilings",
+        videoId: "uPX1Z-C4bJ4"
+      }
+    ],
+
+    // ── Reglementering ────────────────────────────────────────────────
+    sheet_reg_vfr: [
+      {
+        title: "Hoogtemeterinstellingen: QNH / QFE / FL",
+        subtitle: "QNH, QFE en 1013.2 hPa – wanneer gebruik je wat?",
+        videoId: "L1ml_vIibJc"
+      }
+    ],
+    sheet_reg_transponder: [
+      {
+        title: "Transponder codes begrijpen",
+        subtitle: "Squawk codes, noodcodes 7500/7600/7700, Mode C/S",
+        videoId: "3czjT7WG2qM"
+      }
+    ]
+  };
+
+  // ============ GLOBAL STATE ============
+  let learningMode = false;
+  let selectedCategory = null;
+  let examMode = false;
+  let examQuestions = [];      // the 20 selected questions for current exam
+  let examAnswers = [];        // {questionId, correct, selectedAnswer, correctAnswer, explanation} per question
+  let examCurrentIndex = 0;
+  let examAnswered = false;
+  let examWrongQueue = [];     // wrong questions queued for retry
+  let examRetryRound = false;  // true when replaying wrong answers
+  let items = [];
+  let queue = [];
+  let selectedOptionIndex = null;
+  let totalWrong = 0;
+
+  // Session progress tracking - persists across category switches
+  let sessionProgress = {
+    meteo: {},
+    navigatie: {},
+    vliegen: {},
+    reglementering: {}
+  };
+
+  // PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  
+  let currentPdf = null;
+  let currentPdfPage = 1;
+  let currentPdfNumPages = 1;
+  let currentPdfFile = null;
+
+  // ============ DOM ELEMENTS ============
+  const categorySelection = document.getElementById("categorySelection");
+  const quizSection = document.getElementById("quizSection");
+  const resultsSection = document.getElementById("resultsSection");
+
+  const categoryGrid = document.getElementById("categoryGrid");
+  const startStudyBtn = document.getElementById("startStudyBtn");
+  const backToCategoriesBtn = document.getElementById("backToCategoriesBtn");
+  const backToCategoriesFromQuizBtn = document.getElementById("backToCategoriesFromQuizBtn");
+
+  const questionTextEl = document.getElementById("questionText");
+  const optionsContainer = document.getElementById("optionsContainer");
+  const feedbackEl = document.getElementById("feedback");
+  const feedbackTitleEl = document.getElementById("feedbackTitle");
+  const explanationEl = document.getElementById("explanation");
+  const openPdfBtn = document.getElementById("openPdfBtn");
+  const checkButton = document.getElementById("checkButton");
+  const continueButton = document.getElementById("continueButton");
+
+  const progressFill = document.getElementById("progressFill");
+  const statRemaining = document.getElementById("statRemaining");
+  const statMastered = document.getElementById("statMastered");
+  const statWrong = document.getElementById("statWrong");
+
+  const finalScoreEl = document.getElementById("finalScore");
+  const finalMasteredEl = document.getElementById("finalMastered");
+  const finalTotalEl = document.getElementById("finalTotal");
+  const restartBtn = document.getElementById("restartBtn");
+
+  const pdfModal = document.getElementById("pdfModal");
+  const pdfModalTitle = document.getElementById("pdfModalTitle");
+  const pdfCanvas = document.getElementById("pdfCanvas");
+  const pdfLoading = document.getElementById("pdfLoading");
+  const closePdfModal = document.getElementById("closePdfModal");
+  const prevPage = document.getElementById("prevPage");
+  const nextPage = document.getElementById("nextPage");
+  const pageInfo = document.getElementById("pageInfo");
+  const learningModeSwitch = document.getElementById("learningModeSwitch");
+  const learningBadge = document.getElementById("learningBadge");
+
+  // Exam DOM elements
+  const examSection = document.getElementById("examSection");
+  const examResultsSection = document.getElementById("examResultsSection");
+  const examQuestionTextEl = document.getElementById("examQuestionText");
+  const examOptionsContainer = document.getElementById("examOptionsContainer");
+  const examFeedbackEl = document.getElementById("examFeedback");
+  const examFeedbackTitleEl = document.getElementById("examFeedbackTitle");
+  const examExplanationEl = document.getElementById("examExplanation");
+  const examOpenPdfBtn = document.getElementById("examOpenPdfBtn");
+  const examNextBtn = document.getElementById("examNextBtn");
+  const examProgressFill = document.getElementById("examProgressFill");
+  const examStatCurrent = document.getElementById("examStatCurrent");
+  const examStatCorrect = document.getElementById("examStatCorrect");
+  const examStatWrong = document.getElementById("examStatWrong");
+  const examBadge = document.getElementById("examBadge");
+  const examFinalScore = document.getElementById("examFinalScore");
+  const examScoreCircle = document.getElementById("examScoreCircle");
+  const examPassFailValue = document.getElementById("examPassFailValue");
+  const examCorrectCount = document.getElementById("examCorrectCount");
+  const examReviewList = document.getElementById("examReviewList");
+  const examStatPassFail = document.getElementById("examStatPassFail");
+  const examResultsTitle = document.getElementById("examResultsTitle");
+  const examRetryBtn = document.getElementById("examRetryBtn");
+  const examBackBtn = document.getElementById("examBackBtn");
+  const backToCategoriesFromExamBtn = document.getElementById("backToCategoriesFromExamBtn");
+
+  // ============ INITIALIZE ============
+  function init() {
+    renderCategoryGrid();
+    setupEventListeners();
+  }
+
+  function renderCategoryGrid() {
+    categoryGrid.innerHTML = "";
+    
+    Object.entries(CATEGORIES).forEach(([key, category]) => {
+      const questionsData = window.QUESTIONS_DATA ? window.QUESTIONS_DATA[key] : null;
+      const questionCount = questionsData ? questionsData.questions.length : 0;
+      
+      // Calculate progress for this category
+      const categoryProgress = sessionProgress[key] || {};
+      const masteredCount = Object.values(categoryProgress).filter(p => p.mastered === 1).length;
+      const progressPercent = questionCount > 0 ? Math.round((masteredCount / questionCount) * 100) : 0;
+      
+      const card = document.createElement("div");
+      card.className = "category-card";
+      if (masteredCount > 0) {
+        card.classList.add("has-progress");
+      }
+      card.dataset.category = key;
+      card.innerHTML = `
+        <div class="category-progress">${masteredCount}/${questionCount}</div>
+        <div class="category-checkmark">✓</div>
+        <div class="category-icon">${category.icon}</div>
+        <div class="category-title">${category.name}</div>
+        <div class="category-subtitle">${category.subtitle}</div>
+        <div class="category-count">${questionCount} vragen${masteredCount > 0 ? ' • ' + progressPercent + '% beheerst' : ''}</div>
+      `;
+      card.addEventListener('click', () => selectCategory(key));
+      categoryGrid.appendChild(card);
+    });
+
+    // ── Exam card (full-width, always at the bottom) ──────────────────
+    const examCard = document.createElement("div");
+    examCard.className = "exam-category-card";
+    examCard.dataset.category = "examen";
+    examCard.innerHTML = `
+      <div class="category-checkmark" id="examCheckmark">✓</div>
+      <div class="exam-icon">🎓</div>
+      <div class="exam-title">${EXAM_CATEGORY.name}</div>
+      <div class="exam-subtitle">${EXAM_CATEGORY.subtitle}</div>
+      <div class="exam-meta">📝 ${EXAM_CATEGORY.meta}</div>
+    `;
+    examCard.addEventListener('click', () => selectCategory('examen'));
+    categoryGrid.appendChild(examCard);
+  }
+
+  function selectCategory(categoryKey) {
+    selectedCategory = categoryKey;
+    // Deselect all normal category cards
+    document.querySelectorAll('.category-card').forEach(card => {
+      card.classList.toggle('selected', card.dataset.category === categoryKey);
+    });
+    // Toggle exam card selected state
+    const examCard = document.querySelector('.exam-category-card');
+    if (examCard) {
+      examCard.classList.toggle('selected', categoryKey === 'examen');
+    }
+    startStudyBtn.disabled = false;
+    // Update button label and hide learning toggle for exam mode
+    if (categoryKey === 'examen') {
+      startStudyBtn.textContent = 'START PROEFEXAMEN';
+      document.querySelector('.learning-mode-toggle').style.display = 'none';
+    } else {
+      startStudyBtn.textContent = 'START OEFENEN';
+      document.querySelector('.learning-mode-toggle').style.display = '';
+    }
+  }
+
+  function setupEventListeners() {
+    startStudyBtn.addEventListener('click', startQuiz);
+    continueButton.addEventListener('click', continueQuiz);
+    restartBtn.addEventListener('click', restartQuiz);
+
+    // Learning mode toggle
+    learningModeSwitch.addEventListener('change', () => {
+      learningMode = learningModeSwitch.checked;
+    });
+    
+    backToCategoriesBtn.addEventListener('click', () => {
+      resultsSection.classList.add('hidden');
+      categorySelection.classList.remove('hidden');
+      document.body.classList.remove('quiz-active');
+      renderCategoryGrid(); // Refresh to show updated progress
+      selectedCategory = null;
+      document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      startStudyBtn.disabled = true;
+    });
+
+    backToCategoriesFromQuizBtn.addEventListener('click', () => {
+      saveCurrentProgress();
+      quizSection.classList.add('hidden');
+      categorySelection.classList.remove('hidden');
+      document.body.classList.remove('quiz-active');
+      renderCategoryGrid(); // Refresh to show updated progress
+      selectedCategory = null;
+      document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      startStudyBtn.disabled = true;
+    });
+
+    // PDF modal
+    closePdfModal.addEventListener('click', closePdfViewer);
+    prevPage.addEventListener('click', () => changePdfPage(-1));
+    nextPage.addEventListener('click', () => changePdfPage(1));
+    openPdfBtn.addEventListener('click', openPdfViewer);
+
+    // Exam buttons
+    examNextBtn.addEventListener('click', examNextQuestion);
+    examRetryBtn.addEventListener('click', startExam);
+    examOpenPdfBtn.addEventListener('click', () => {
+      const pageNum = parseInt(examOpenPdfBtn.dataset.page) || 1;
+      const pdfFileName = examOpenPdfBtn.dataset.pdfFile;
+      currentPdfFile = pdfFileName;
+      currentPdfPage = pageNum;
+      pdfModal.classList.add("active");
+      pdfModalTitle.textContent = pdfFileName;
+      loadPdf(pdfFileName, pageNum);
+    });
+    examBackBtn.addEventListener('click', () => {
+      examResultsSection.classList.add('hidden');
+      categorySelection.classList.remove('hidden');
+      document.body.classList.remove('quiz-active');
+      renderCategoryGrid();
+      selectedCategory = null;
+      startStudyBtn.disabled = true;
+      startStudyBtn.textContent = 'Start oefenen';
+      document.querySelector('.learning-mode-toggle').style.display = '';
+    });
+    backToCategoriesFromExamBtn.addEventListener('click', () => {
+      examSection.classList.add('hidden');
+      categorySelection.classList.remove('hidden');
+      document.body.classList.remove('quiz-active');
+      renderCategoryGrid();
+      selectedCategory = null;
+      startStudyBtn.disabled = true;
+      startStudyBtn.textContent = 'Start oefenen';
+      document.querySelector('.learning-mode-toggle').style.display = '';
+    });
+  }
+
+  function startQuiz() {
+    // ── Exam mode branch ──────────────────────────────────────────────
+    if (selectedCategory === 'examen') {
+      startExam();
+      return;
+    }
+
+    const categoryData = window.QUESTIONS_DATA[selectedCategory];
+    
+    if (!categoryData || !categoryData.questions || categoryData.questions.length === 0) {
+      alert("Geen vragen beschikbaar voor deze categorie!");
+      return;
+    }
+
+    // Load existing progress for this category
+    const categoryProgress = sessionProgress[selectedCategory] || {};
+
+    // Convert questions to internal format and restore progress
+    items = categoryData.questions.map(q => {
+      const isSheet = q.type === "study_sheet" || q.difficulty === "info";
+      const existingProgress = categoryProgress[q.id] || { mastered: 0, wrongCount: 0 };
+      return {
+        id: q.id,
+        type: q.type || "quiz",
+        question: q.question,
+        options: q.options || [],
+        correctAnswer: (q.options && q.correctIndex !== undefined) ? q.options[q.correctIndex] : "",
+        explanation: q.explanation || "",
+        difficulty: q.difficulty || "medium",
+        mastered: isSheet ? 0 : existingProgress.mastered,
+        wrongCount: isSheet ? 0 : existingProgress.wrongCount,
+        _shownOptions: null
+      };
+    });
+
+    console.log(`📚 Starting quiz with ${items.length} total items`);
+
+    // Build queue: sheets stay anchored, questions per chapter are shuffled
+    const queueIds = [];
+    let chapterBuffer = [];
+
+    function flushChapter() {
+      shuffle(chapterBuffer);
+      chapterBuffer.forEach(id => queueIds.push(id));
+      chapterBuffer = [];
+    }
+
+    items.forEach(it => {
+      const isSheet = it.type === "study_sheet" || it.difficulty === "info";
+      if (isSheet) {
+        flushChapter();
+        queueIds.push(it.id);
+      } else {
+        if (it.mastered === 0) chapterBuffer.push(it.id);
+      }
+    });
+    flushChapter();
+
+    // Check if any real questions remain
+    const realUnmastered = queueIds.filter(id => {
+      const it = items.find(x => x.id === id);
+      return it && it.type !== "study_sheet" && it.difficulty !== "info";
+    });
+    if (realUnmastered.length === 0) {
+      alert("Je hebt alle vragen in deze categorie al beheerst! 🎉");
+      return;
+    }
+
+    // Drop sheets that have no questions after them
+    const finalQueue = [];
+    for (let i = 0; i < queueIds.length; i++) {
+      const it = items.find(x => x.id === queueIds[i]);
+      const isSheet = it && (it.type === "study_sheet" || it.difficulty === "info");
+      if (isSheet) {
+        const hasQsAfter = queueIds.slice(i + 1).some(id => {
+          const nx = items.find(x => x.id === id);
+          return nx && nx.type !== "study_sheet" && nx.difficulty !== "info";
+        });
+        if (hasQsAfter) finalQueue.push(queueIds[i]);
+      } else {
+        finalQueue.push(queueIds[i]);
+      }
+    }
+
+    queue = finalQueue;
+    totalWrong = items.reduce((sum, item) => sum + item.wrongCount, 0);
+    console.log(`📋 Queue: ${queue.length} items (sheets + questions)`);
+
+    categorySelection.classList.add("hidden");
+    quizSection.classList.remove("hidden");
+    document.body.classList.add("quiz-active");
+
+    // Show/hide learning mode badge
+    if (learningMode) {
+      learningBadge.classList.remove("hidden");
+    } else {
+      learningBadge.classList.add("hidden");
+    }
+
+    showNextFromQueue();
+  }
+
+  function saveCurrentProgress() {
+    // Save current quiz progress to session
+    if (!selectedCategory || items.length === 0) return;
+
+    items.forEach(item => {
+      sessionProgress[selectedCategory][item.id] = {
+        mastered: item.mastered,
+        wrongCount: item.wrongCount
+      };
+    });
+  }
+
+  function showNextFromQueue() {
+    if (queue.length === 0) {
+      console.log("🏁 No more questions in queue - showing results");
+      showResults();
+      return;
+    }
+
+    console.log(`📋 Queue has ${queue.length} questions remaining`);
+
+    selectedOptionIndex = null;
+    feedbackEl.classList.remove("active", "correct", "incorrect");
+    feedbackEl.style.display = "";   // clear inline override; CSS handles visibility
+    openPdfBtn.classList.add("hidden");
+    continueButton.classList.add("hidden");
+
+    const itemId = queue[0];
+    const item = items.find(it => it.id === itemId);
+    if (!item) {
+      console.warn(`⚠️ Question ${itemId} not found in items array`);
+      queue.shift();
+      return showNextFromQueue();
+    }
+
+    // renderItem handles show/hide of checkButton based on item type
+
+    console.log(`â❓ Showing question: ${item.id}`);
+    renderItem(item);
+    updateStats();
+  }
+
+  function renderItem(item) {
+    // Reset all state for the new item
+    optionsContainer.innerHTML = "";
+    feedbackEl.classList.remove("active", "correct", "incorrect");
+    feedbackEl.style.display = "";
+    continueButton.classList.add("hidden");
+    checkButton.classList.add("hidden");
+    openPdfBtn.classList.add("hidden");
+    explanationEl.textContent = "";
+    selectedOptionIndex = null;
+
+    // ── Study sheet card ────────────────────────────────────
+    if (item.type === "study_sheet" || item.difficulty === "info") {
+      questionTextEl.innerHTML = item.question;
+
+      // ── Learning mode: inject video card BELOW study sheet ──────────
+      if (learningMode) {
+        const videos = CHAPTER_VIDEOS[item.id];
+        if (videos && videos.length > 0) {
+          const videoCard = buildVideoCard(videos, item);
+          optionsContainer.appendChild(videoCard);
+          return; // video card has its own "Start vragen" button
+        }
+      }
+
+      // No video (or learning mode off) → normal "Start vragen" button
+      const btn = document.createElement("button");
+      btn.className = "btn";
+      btn.style.cssText = "width:100%;margin-top:16px;padding:16px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;font-size:16px;font-weight:700;border:none;border-radius:14px;cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 16px rgba(102,126,234,.45);";
+      btn.textContent = "Start vragen \u2192";
+      btn.addEventListener("click", () => {
+        item.mastered = 1;
+        queue.shift();
+        updateStats();
+        showNextFromQueue();
+      });
+      optionsContainer.appendChild(btn);
+      return;
+    }
+
+    // ── Normal question ─────────────────────────────────────
+    questionTextEl.textContent = item.question;
+    checkButton.classList.remove("hidden");
+
+    const shownOptions = item.options.slice();
+    shuffle(shownOptions);
+    item._shownOptions = shownOptions;
+
+    shownOptions.forEach((opt, idx) => {
+      const d = document.createElement("div");
+      d.className = "option";
+      d.textContent = opt;
+      d.addEventListener("click", () => selectOption(idx));
+      optionsContainer.appendChild(d);
+    });
+  }
+
+
+    // ============ BUILD VIDEO CARD (Learning Mode) ============
+  function buildVideoCard(videos, item) {
+    const wrapper = document.createElement("div");
+
+    let activeTab = 0;
+
+    function renderCard() {
+      const v = videos[activeTab];
+      const thumbUrl = `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`;
+      const ytUrl = `https://www.youtube.com/watch?v=${v.videoId}`;
+
+      const tabsHtml = videos.length > 1
+        ? `<div class="video-tabs">
+            ${videos.map((vt, i) => `
+              <div class="video-tab${i === activeTab ? ' active' : ''}" data-tab="${i}">
+                ${vt.title.length > 30 ? vt.title.substring(0, 28) + '…' : vt.title}
+              </div>`).join('')}
+           </div>`
+        : '';
+
+      wrapper.innerHTML = `
+        <div class="video-card">
+          <div class="video-card-header">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                <span class="video-badge">🎓 Leermateriaal</span>
+              </div>
+              <div class="video-card-title">${v.title}</div>
+              <div class="video-card-subtitle">${v.subtitle}</div>
+            </div>
+          </div>
+          ${tabsHtml}
+          <div class="video-embed-area">
+            <div class="video-thumb-container" onclick="window.open('${ytUrl}', '_blank')" title="Bekijk op YouTube">
+              <img
+                src="${thumbUrl}"
+                alt="${v.title}"
+                class="video-thumb-img"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+              />
+              <div class="video-thumb-fallback" style="display:none;">
+                <div style="font-size:3em; margin-bottom:8px;">▶</div>
+                <div style="font-size:0.9em; color:#a8d8ea;">${v.title}</div>
+              </div>
+              <div class="video-play-overlay">
+                <div class="video-play-btn-overlay">▶</div>
+              </div>
+              <div class="video-yt-badge">
+                <svg viewBox="0 0 24 24" width="20" height="14" fill="white"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6a3 3 0 0 0-2.1 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 20.5 12 20.5 12 20.5s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.8 15.5V8.5l6.2 3.5-6.2 3.5z"/></svg>
+                Bekijk op YouTube
+              </div>
+            </div>
+            <button class="video-start-btn" id="videoStartBtn_${item.id}">
+              Start vragen voor dit hoofdstuk →
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Re-attach tab listeners
+      wrapper.querySelectorAll('.video-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          activeTab = parseInt(tab.dataset.tab);
+          renderCard();
+        });
+      });
+
+      // "Start vragen" button
+      const startBtn = wrapper.querySelector(`#videoStartBtn_${item.id}`);
+      startBtn.addEventListener('click', () => {
+        item.mastered = 1;
+        queue.shift();
+        updateStats();
+        showNextFromQueue();
+      });
+    }
+
+    renderCard();
+    return wrapper;
+  }
+
+
+
+  function selectOption(idx) {
+    if (checkButton.classList.contains("hidden")) return;
+    selectedOptionIndex = idx;
+    document.querySelectorAll(".option").forEach((el, i) => {
+      el.classList.toggle("selected", i === idx);
+    });
+    checkAnswer();
+  }
+
+  function checkAnswer() {
+    if (selectedOptionIndex === null) {
+      alert("Selecteer een antwoord!");
+      return;
+    }
+
+    const itemId = queue[0];
+    const item = items.find(it => it.id === itemId);
+    if (!item) return;
+
+    const selected = item._shownOptions[selectedOptionIndex];
+    const isCorrect = selected === item.correctAnswer;
+
+    // Disable all options (remove click handlers)
+    const optionEls = document.querySelectorAll(".option");
+    optionEls.forEach((el, i) => {
+      el.replaceWith(el.cloneNode(true));
+    });
+
+    // Highlight correct and incorrect answers
+    const optionEls2 = document.querySelectorAll(".option");
+    optionEls2.forEach((el, i) => {
+      const value = item._shownOptions[i];
+      if (value === item.correctAnswer) el.classList.add("correct");
+      else if (i === selectedOptionIndex) el.classList.add("incorrect");
+    });
+
+    // Show feedback
+    feedbackEl.classList.add("active", isCorrect ? "correct" : "incorrect");
+    feedbackTitleEl.textContent = isCorrect ? "✅ Correct!" : "❌ Fout";
+    explanationEl.textContent = item.explanation;
+
+    // Extract page number and show PDF button if available
+    const pageNum = extractPageNumber(item.explanation);
+    if (pageNum) {
+      const category = CATEGORIES[selectedCategory];
+      if (category && category.pdfFile) {
+        openPdfBtn.classList.remove("hidden");
+        openPdfBtn.textContent = `📘 Open cursus op p. ${pageNum}`;
+        openPdfBtn.dataset.page = pageNum;
+        openPdfBtn.dataset.pdfFile = category.pdfFile;
+      }
+    }
+
+    // Remove this question from the queue
+    queue.shift();
+
+    // Update the item's status
+    if (isCorrect) {
+      // Mark as mastered - question won't come back
+      item.mastered = 1;
+      console.log(`✅ Correct! Question ${item.id} mastered. Total mastered: ${items.filter(it => it.mastered === 1).length}/${items.length}`);
+    } else {
+      // Mark as wrong and add back to queue
+      item.wrongCount += 1;
+      totalWrong += 1;
+      
+      // Add back to queue after a few questions
+      reinsertLater(item.id, 3);
+      console.log(`❌ Wrong! Question ${item.id} will appear again. Wrong count: ${totalWrong}`);
+    }
+
+    checkButton.classList.add("hidden");
+    continueButton.classList.remove("hidden");
+    feedbackEl.style.display = "";   // let CSS class control visibility
+
+    // Update stats immediately
+    updateStats();
+  }
+
+  function extractPageNumber(text) {
+    // Extract page number from explanation like "p. 4/88" or "(p. 20/88)" or "p. 3"
+    const match = text.match(/\(?\s*p\.\s*(\d+)(?:\/\d+)?\s*\)?/i);
+    return match ? parseInt(match[1]) : null;
+  }
+
+  async function openPdfViewer() {
+    const pageNum = parseInt(openPdfBtn.dataset.page) || 1;
+    const pdfFileName = openPdfBtn.dataset.pdfFile;
+    
+    currentPdfFile = pdfFileName;
+    currentPdfPage = pageNum;
+    pdfModal.classList.add("active");
+    pdfModalTitle.textContent = pdfFileName;
+    
+    await loadPdf(pdfFileName, pageNum);
+  }
+
+  function closePdfViewer() {
+    pdfModal.classList.remove("active");
+    currentPdf = null;
+  }
+
+  async function loadPdf(fileName, pageNum = 1) {
+    pdfLoading.style.display = 'block';
+    pdfCanvas.style.display = 'none';
+
+    try {
+      // Check if we have embedded PDFs
+      if (!window.EMBEDDED_PDFS || !window.EMBEDDED_PDFS[fileName]) {
+        throw new Error(`PDF ${fileName} niet gevonden in embedded data`);
+      }
+
+      // Get base64 data URL
+      const pdfDataUrl = window.EMBEDDED_PDFS[fileName];
+      
+      // Convert data URL to array buffer
+      const response = await fetch(pdfDataUrl);
+      const arrayBuffer = await response.arrayBuffer();
+      
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      currentPdf = pdf;
+      currentPdfNumPages = pdf.numPages;
+      currentPdfPage = Math.min(Math.max(1, pageNum), currentPdfNumPages);
+      
+      await renderPdfPage(currentPdfPage);
+      updatePdfNavigation();
+      
+      pdfLoading.style.display = 'none';
+      pdfCanvas.style.display = 'block';
+    } catch (err) {
+      console.error("Error loading PDF:", err);
+      alert("Fout bij laden van PDF: " + err.message);
+      pdfLoading.style.display = 'none';
+      closePdfViewer();
+    }
+  }
+
+  async function renderPdfPage(pageNum) {
+    if (!currentPdf) return;
+
+    const page = await currentPdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 1.5 });
+    
+    const canvas = pdfCanvas;
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    const renderContext = {
+      canvasContext: context,
+      viewport: viewport
+    };
+
+    await page.render(renderContext).promise;
+  }
+
+  function changePdfPage(delta) {
+    if (!currentPdf) return;
+    
+    const newPage = currentPdfPage + delta;
+    if (newPage < 1 || newPage > currentPdfNumPages) return;
+    
+    currentPdfPage = newPage;
+    renderPdfPage(currentPdfPage);
+    updatePdfNavigation();
+  }
+
+  function updatePdfNavigation() {
+    pageInfo.textContent = `Pagina ${currentPdfPage} / ${currentPdfNumPages}`;
+    prevPage.disabled = currentPdfPage <= 1;
+    nextPage.disabled = currentPdfPage >= currentPdfNumPages;
+  }
+
+  function reinsertLater(itemId, minGap) {
+    const gap = Math.min(Math.max(0, minGap || 0), queue.length);
+    if (queue.length <= gap) {
+      queue.push(itemId);
+      return;
+    }
+    const pos = gap + Math.floor(Math.random() * (queue.length - gap + 1));
+    queue.splice(pos, 0, itemId);
+  }
+
+  function continueQuiz() {
+    showNextFromQueue();
+  }
+
+  function updateStats() {
+    // Only count real questions (exclude study sheets)
+    const realItems = items.filter(it => it.type !== "study_sheet" && it.difficulty !== "info");
+    const masteredCount = realItems.filter(it => it.mastered === 1).length;
+    const total = realItems.length;
+    const remaining = total - masteredCount;
+
+    // Update display
+    statRemaining.textContent = remaining;
+    statMastered.textContent = masteredCount;
+    statWrong.textContent = totalWrong;
+
+    // Update progress bar
+    const progress = total === 0 ? 0 : Math.round((masteredCount / total) * 100);
+    progressFill.style.width = progress + "%";
+    
+    console.log(`📊 Stats: ${masteredCount} mastered, ${remaining} remaining, ${totalWrong} wrong, ${progress}% complete`);
+  }
+
+  function showResults() {
+    saveCurrentProgress();
+    
+    quizSection.classList.add("hidden");
+    resultsSection.classList.remove("hidden");
+
+    const mastered = items.filter(it => it.mastered === 1).length;
+    const total = items.length;
+    const pct = total === 0 ? 0 : Math.round((mastered / total) * 100);
+
+    finalScoreEl.textContent = pct + "%";
+    finalMasteredEl.textContent = mastered;
+    finalTotalEl.textContent = total;
+    
+    console.log(`🎉 Quiz completed! ${mastered}/${total} questions mastered (${pct}%)`);
+  }
+
+  function restartQuiz() {
+    // Clear all session progress
+    sessionProgress = {
+      meteo: {},
+      navigatie: {},
+      vliegen: {},
+      reglementering: {}
+    };
+
+    items = [];
+    queue = [];
+    selectedOptionIndex = null;
+    totalWrong = 0;
+
+    resultsSection.classList.add("hidden");
+    quizSection.classList.add("hidden");
+    categorySelection.classList.remove("hidden");
+
+    document.body.classList.remove("quiz-active");
+    
+    // Reset category selection and refresh grid
+    selectedCategory = null;
+    renderCategoryGrid();
+    document.querySelectorAll('.category-card').forEach(card => {
+      card.classList.remove('selected');
+    });
+    startStudyBtn.disabled = true;
+  }
+
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+
+  // ============ EXAM MODE FUNCTIONS ============
+
+  // PDF file map for exam explanations
+  const EXAM_PDF_MAP = {
+    'Meteo': 'Meteo.pdf',
+    'Navigatie': 'navigatie.pdf',
+    'Principes van het vliegen': 'vliegen.pdf',
+    'Reglementering': 'reglementering.pdf'
+  };
+
+  function startExam() {
+    // Pick 20 random questions from the 110
+    const pool = [...EXAM_QUESTIONS];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    examQuestions = pool.slice(0, 20);
+    examAnswers = [];
+    examCurrentIndex = 0;
+    examAnswered = false;
+    examMode = true;
+    examWrongQueue = [];       // wrong questions to retry at the end
+    examRetryRound = false;    // are we in the retry round?
+
+    // Switch to exam view
+    categorySelection.classList.add('hidden');
+    quizSection.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    examResultsSection.classList.add('hidden');
+    examSection.classList.remove('hidden');
+    document.body.classList.add('quiz-active');
+    examBadge.classList.remove('hidden');
+
+    renderExamQuestion();
+    updateExamStats();
+  }
+
+  function renderExamQuestion() {
+    const q = examQuestions[examCurrentIndex];
+    examAnswered = false;
+
+    // Reset UI
+    examFeedbackEl.classList.remove('active', 'correct', 'incorrect');
+    examFeedbackEl.classList.add('hidden');
+    examNextBtn.classList.add('hidden');
+    examOpenPdfBtn.classList.add('hidden');
+    examOptionsContainer.innerHTML = '';
+    examQuestionTextEl.textContent = q.question;
+
+    // Shuffle options but track correct
+    const opts = q.options.slice();
+    const correctText = opts[q.correctIndex];
+    for (let i = opts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [opts[i], opts[j]] = [opts[j], opts[i]];
+    }
+
+    opts.forEach((opt, idx) => {
+      const btn = document.createElement('div');
+      btn.className = 'option';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => {
+        if (examAnswered) return;
+        examAnswered = true;
+        const isCorrect = (opt === correctText);
+        selectExamOption(btn, opt, correctText, isCorrect, q);
+      });
+      examOptionsContainer.appendChild(btn);
+    });
+
+    // Progress
+    const pct = Math.round((examCurrentIndex / examQuestions.length) * 100);
+    examProgressFill.style.width = pct + '%';
+    updateExamStats();
+  }
+
+  function selectExamOption(selectedBtn, selectedText, correctText, isCorrect, q) {
+    // Disable all options
+    document.querySelectorAll('#examOptionsContainer .option').forEach(btn => {
+      btn.style.pointerEvents = 'none';
+      if (btn.textContent === correctText) {
+        btn.classList.add('correct');
+      } else if (btn === selectedBtn && !isCorrect) {
+        btn.classList.add('incorrect');
+      }
+    });
+
+    // Record answer (only record first attempt per question, not retries)
+    if (!examRetryRound) {
+      examAnswers.push({
+        questionId: q.id,
+        question: q.question,
+        correct: isCorrect,
+        selectedAnswer: selectedText,
+        correctAnswer: correctText,
+        explanation: q.explanation
+      });
+    } else {
+      // In retry round: update existing answer to reflect final outcome
+      const existing = examAnswers.find(a => a.questionId === q.id);
+      if (existing) {
+        existing.retriedCorrect = isCorrect;
+        existing.retriedAnswer = selectedText;
+      }
+    }
+
+    // Queue wrong answer for retry (first round only)
+    if (!isCorrect && !examRetryRound) {
+      examWrongQueue.push(q);
+    }
+
+    // Show feedback
+    examFeedbackEl.classList.remove('hidden');
+    examFeedbackEl.classList.add('active', isCorrect ? 'correct' : 'incorrect');
+    examFeedbackTitleEl.textContent = isCorrect ? '✅ Correct!' : '❌ Fout';
+    examExplanationEl.textContent = q.explanation;
+
+    // PDF button – parse category and page from explanation like "(Meteo, p. 11)"
+    const pdfMatch = q.explanation.match(/\(([^,)]+),\s*p\.\s*(\d+)/);
+    if (pdfMatch) {
+      const catName = pdfMatch[1].trim();
+      const pageNum = parseInt(pdfMatch[2]);
+      const pdfFile = EXAM_PDF_MAP[catName];
+      if (pdfFile) {
+        examOpenPdfBtn.classList.remove('hidden');
+        examOpenPdfBtn.textContent = `📘 Open ${catName} p. ${pageNum}`;
+        examOpenPdfBtn.dataset.page = pageNum;
+        examOpenPdfBtn.dataset.pdfFile = pdfFile;
+      }
+    }
+
+    // Update live stats
+    updateExamStats();
+
+    // Show next or finish button
+    examNextBtn.classList.remove('hidden');
+    if (examCurrentIndex === examQuestions.length - 1) {
+      examNextBtn.textContent = '📊 Bekijk resultaten';
+    } else {
+      examNextBtn.textContent = 'Volgende vraag →';
+    }
+  }
+
+  function examNextQuestion() {
+    examCurrentIndex++;
+    if (examCurrentIndex >= examQuestions.length) {
+      // Finished current round - start retry round if there are wrong answers
+      if (!examRetryRound && examWrongQueue.length > 0) {
+        examRetryRound = true;
+        examQuestions = [...examWrongQueue];  // retry only the wrong ones
+        examWrongQueue = [];
+        examCurrentIndex = 0;
+        // Update badge to show retry round
+        examBadge.textContent = '🔄 Herkansing';
+        examBadge.classList.remove('hidden');
+        document.getElementById('examStatCurrent').parentElement.querySelector('.stat-label').textContent = 'Herkansing';
+        renderExamQuestion();
+        updateExamStats();
+      } else {
+        showExamResults();
+      }
+    } else {
+      renderExamQuestion();
+    }
+  }
+
+  function updateExamStats() {
+    const answered = examAnswers.length;
+    const correct = examAnswers.filter(a => a.correct).length;
+    const wrong = answered - correct;
+    const current = Math.min(examCurrentIndex + 1, examQuestions.length);
+
+    if (examRetryRound) {
+      examStatCurrent.textContent = current + '/' + examQuestions.length;
+    } else {
+      examStatCurrent.textContent = current + '/20';
+    }
+    examStatCorrect.textContent = correct;
+    examStatWrong.textContent = wrong;
+
+    const total = examRetryRound ? examQuestions.length : 20;
+    const pct = Math.round((examCurrentIndex / total) * 100);
+    examProgressFill.style.width = pct + '%';
+  }
+
+  function showExamResults() {
+    examSection.classList.add('hidden');
+    examResultsSection.classList.remove('hidden');
+
+    // Only count the first 20 questions (not retry round) for final score
+    const first20 = examAnswers.slice(0, 20);
+    const correct = first20.filter(a => a.correct).length;
+    const total = first20.length;
+    const pct = Math.round((correct / total) * 100);
+    const passed = correct >= 15;
+
+    examFinalScore.textContent = pct + '%';
+    examCorrectCount.textContent = correct + '/' + total;
+
+    examScoreCircle.style.background = passed
+      ? 'linear-gradient(135deg,#58cc02,#46a302)'
+      : 'linear-gradient(135deg,#e94560,#c0392b)';
+
+    examStatPassFail.className = 'exam-result-stat ' + (passed ? 'pass' : 'fail');
+    examPassFailValue.textContent = passed ? '✅ Geslaagd' : '❌ Niet geslaagd';
+    examResultsTitle.textContent = passed ? '🎉 Proefexamen Geslaagd!' : '📝 Proefexamen Resultaat';
+
+    // ── Subject breakdown ─────────────────────────────────────────────
+    const subjectMap = {
+      'Meteo': { label: '🌦️ Meteorologie', correct: 0, total: 0 },
+      'Navigatie': { label: '🧭 Navigatie', correct: 0, total: 0 },
+      'Principes van het vliegen': { label: '✈️ Principes van Vliegen', correct: 0, total: 0 },
+      'Reglementering': { label: '📋 Reglementering', correct: 0, total: 0 }
+    };
+
+    first20.forEach(ans => {
+      const m = ans.explanation.match(/\(([^,)]+),\s*p\.\s*(\d+)/);
+      if (m) {
+        const cat = m[1].trim();
+        if (subjectMap[cat]) {
+          subjectMap[cat].total++;
+          if (ans.correct) subjectMap[cat].correct++;
+        }
+      }
+    });
+
+    const subjectBreakdown = document.getElementById('subjectBreakdown');
+    subjectBreakdown.innerHTML = '';
+    Object.entries(subjectMap).forEach(([key, sub]) => {
+      if (sub.total === 0) return;
+      const pctSub = Math.round((sub.correct / sub.total) * 100);
+      const grade = pctSub >= 75 ? 'good' : pctSub >= 50 ? 'mid' : 'poor';
+      const noteClass = pctSub >= 75 ? '' : pctSub >= 50 ? 'warn' : 'bad';
+      const noteText = pctSub >= 75
+        ? `${sub.correct}/${sub.total} correct`
+        : pctSub >= 50
+          ? `⚠️ Herhaling aanbevolen – ${sub.correct}/${sub.total} correct`
+          : `❗ Bijstuderen nodig – ${sub.correct}/${sub.total} correct`;
+
+      const row = document.createElement('div');
+      row.className = 'subject-row';
+      row.innerHTML = `
+        <div class="subject-header">
+          <span>${sub.label}</span>
+          <span>${pctSub}%</span>
+        </div>
+        <div class="subject-bar-bg">
+          <div class="subject-bar-fill ${grade}" style="width:${pctSub}%"></div>
+        </div>
+        <div class="subject-note ${noteClass}">${noteText}</div>
+      `;
+      subjectBreakdown.appendChild(row);
+    });
+
+    // ── Per-question review list ─────────────────────────────────────
+    examReviewList.innerHTML = '';
+    first20.forEach((ans, i) => {
+      const div = document.createElement('div');
+      div.className = 'exam-review-item ' + (ans.correct ? 'correct' : 'incorrect');
+
+      const srcMatch = ans.explanation.match(/\(([^,)]+),\s*p\.\s*(\d+)/);
+      const srcLabel = srcMatch ? `${srcMatch[1]}, p. ${srcMatch[2]}` : '';
+      const pdfFile = srcMatch ? EXAM_PDF_MAP[srcMatch[1].trim()] : null;
+      const pageNum = srcMatch ? parseInt(srcMatch[2]) : null;
+
+      div.innerHTML = `
+        <div class="exam-review-q">${i + 1}. ${ans.question}</div>
+        <div class="exam-review-answer">
+          ${ans.correct
+            ? `<span style="color:#46a302;">✅ ${ans.selectedAnswer}</span>`
+            : `<span style="color:#d32f2f;">❌ ${ans.selectedAnswer}</span><br>
+               <span style="color:#46a302;">✓ ${ans.correctAnswer}</span>`
+          }
+        </div>
+        ${srcLabel && pdfFile
+          ? `<div class="exam-review-source" data-page="${pageNum}" data-pdf="${pdfFile}">
+               📘 ${srcLabel}
+             </div>`
+          : ''}
+      `;
+
+      if (pdfFile && pageNum) {
+        div.querySelector('.exam-review-source').addEventListener('click', () => {
+          currentPdfFile = pdfFile;
+          currentPdfPage = pageNum;
+          pdfModal.classList.add('active');
+          pdfModalTitle.textContent = pdfFile;
+          loadPdf(pdfFile, pageNum);
+        });
+      }
+
+      examReviewList.appendChild(div);
+    });
+  }
+
+  // Initialize on load
+  init();
+</script>
+
+</body>
+</html>
